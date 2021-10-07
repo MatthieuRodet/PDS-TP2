@@ -34,10 +34,14 @@ let rec program = parser
 
 
 and expression = parser
+  | [< 'LP; e = expression; 'RP >] -> ParentheseExpression e
   | [< e1 = factor; e = expression_aux e1 >] -> e
 
 and expression_aux e1 = parser
   | [< 'PLUS;  e2 = factor; e = expression_aux (AddExpression (e1, e2)) >] -> e
+  | [< 'MINUS;  e2 = factor; e = expression_aux (MinusExpression (e1, e2)) >] -> e
+  | [< 'MUL;  e2 = factor; e = expression_aux (MulExpression (e1, e2)) >] -> e
+  | [< 'DIV;  e2 = factor; e = expression_aux (DivExpression (e1, e2)) >] -> e
   | [<>] -> e1
   (* TODO : that's all? *)
 
