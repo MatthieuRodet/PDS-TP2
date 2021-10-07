@@ -46,6 +46,7 @@ and expression_aux e1 = parser
 
 and factor = parser
   | [< e1 = primary; e = factor_aux e1 >] -> e
+  | [< e = expression >] -> e
 
 and factor_aux e1 = parser
   | [<>] -> e1
