@@ -34,7 +34,7 @@ let rec program = parser
 
 
 and expression = parser
-  | [< 'LP; e = expression; 'RP >] -> ParentheseExpression e
+  | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
   | [< e1 = factor; e = expression_aux e1 >] -> e
 
 and expression_aux e1 = parser

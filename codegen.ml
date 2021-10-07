@@ -47,6 +47,7 @@ and ir_of_expression : expression -> llvm_ir * llvm_value = function
       let x = newtmp () in 
       let ir = ir1 @@ ir2 @: llvm_udiv ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
+  |ParentheseExpression (e) -> ir_of_expression e 
 
 
 
