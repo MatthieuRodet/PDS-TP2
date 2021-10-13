@@ -5,15 +5,16 @@ open SymbolTable
 
        
 (* main function. returns only a string: the generated code *)
-let rec ir_of_ast (prog : expression) : llvm_ir = (* TODO: change 'expression' when you extend the language *)
+let rec ir_of_ast (prog : program) : llvm_ir = match prog with
+  |Prog([Unit(_, [e])]) -> 
   (* TODO : change when you extend the language *)
-  let ir, v = ir_of_expression prog in
+  let ir, v = ir_of_expression e in
   (* adds the return instruction *)
   let ir = ir @: llvm_return ~ret_type:LLVM_type_i32 ~ret_value:v in
   (* We create the function main *)
   let ir = llvm_define_main ir in
   ir
-
+  |_ -> failwith ("TODO")
 (* translation from VSL+ types to LLVM types *)
 and llvm_type_of_asd_typ : typ -> llvm_type = function
   | Type_Int -> LLVM_type_i32
@@ -48,6 +49,7 @@ and ir_of_expression : expression -> llvm_ir * llvm_value = function
       let ir = ir1 @@ ir2 @: llvm_udiv ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
   |ParentheseExpression (e) -> ir_of_expression e 
+  |VarExpression(e) -> failwith("TODO : ASD : Var")
 
 
 

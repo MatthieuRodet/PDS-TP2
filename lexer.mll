@@ -44,6 +44,8 @@ rule tokenize = parse
       { MUL      :: tokenize lexbuf }
   | '/'
       { DIV      :: tokenize lexbuf }
+  | "INT"
+      { INT_KW  :: tokenize lexbuf }
 
   (* TODO : other keywords *)
 
