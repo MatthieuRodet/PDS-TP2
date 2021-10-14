@@ -39,7 +39,7 @@ and declar = print_string("declar_parser: ok \n");parser
   |[< 'INT_KW ; content = list1 (declar_variable) (comma) >] ->print_string("declar_parser : ok ");  Declaration(content)
 
 and declar_variable = print_string("declar_var_parser: ok "); parser 
-  |[< 'TEXT(content)  >] -> Var(content, None)
+  |[< 'IDENT content  >] -> Var(content, None)
   |[<>] -> failwith("Bad parsing")
 and expression = print_string("expression_parser: ok \n"); parser
   | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
