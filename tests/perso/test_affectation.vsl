@@ -8,7 +8,7 @@
     IF b THEN 
         b:= 2 
     FI
-    IF b THEN
+    IF (b+2) THEN
         b:= 2
     ELSE
         b:= b + 2
@@ -21,4 +21,11 @@
     WHILE c DO
         b := 2
     DONE
+}
+{
+    INT x, y, z
+
+    READ x, y
+    z := x + y
+    PRINT z
 }

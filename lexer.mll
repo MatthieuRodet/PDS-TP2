@@ -14,6 +14,7 @@
 (**********************************************************)
 
 let letter = ['a'-'z']
+let letterMaj = letter | ['A'-'Z']
 let digit  = ['0'-'9']
 let ascii  = _ # ['\n' '"']
 let blanks = [' ' '\n' '\t']
@@ -39,62 +40,61 @@ rule tokenize = parse
   | '+'
       { PLUS      :: tokenize lexbuf }
   | '-'
-      { MINUS      :: tokenize lexbuf }
+      { MINUS     :: tokenize lexbuf }
   | '*'
-      { MUL      :: tokenize lexbuf }
+      { MUL       :: tokenize lexbuf }
   | '/'
-      { DIV      :: tokenize lexbuf }
+      { DIV       :: tokenize lexbuf }
   | "INT"
-      { INT_KW  :: tokenize lexbuf }
-  | "{" 
-      { LB :: tokenize lexbuf }
-  | "}" 
-    { RB :: tokenize lexbuf}
+      { INT_KW    :: tokenize lexbuf }
+  | '{' 
+      { LB        :: tokenize lexbuf }
+  | '}' 
+      { RB        :: tokenize lexbuf }
   | ',' 
-    { COM :: tokenize lexbuf}
-
+      { COM       :: tokenize lexbuf }
   | ":=" 
-    { ASSIGN :: tokenize lexbuf}
+    { ASSIGN      :: tokenize lexbuf }
   | "READ"
-    { READ_KW :: tokenize lexbuf }
+    { READ_KW     :: tokenize lexbuf }
    | "PRINT"
-    { PRINT_KW :: tokenize lexbuf }
+    { PRINT_KW    :: tokenize lexbuf }
   | "RETURN"
-    { RETURN_KW :: tokenize lexbuf }
+    { RETURN_KW   :: tokenize lexbuf }
   | "VOID" 
-    { VOID_KW ::tokenize lexbuf }
+    { VOID_KW     :: tokenize lexbuf }
   | "PROTO"
-    { PROTO_KW :: tokenize lexbuf }
+    { PROTO_KW    :: tokenize lexbuf }
   | "FUNC"
-    { FUNC_KW :: tokenize lexbuf }
+    { FUNC_KW     :: tokenize lexbuf }
   | "IF" 
-    { IF_KW :: tokenize lexbuf} 
+    { IF_KW       :: tokenize lexbuf } 
   | "THEN"
-    { THEN_KW :: tokenize lexbuf }
+    { THEN_KW     :: tokenize lexbuf }
   | "ELSE"
-    { ELSE_KW :: tokenize lexbuf }
+    { ELSE_KW     :: tokenize lexbuf }
   | "FI"
-    { FI_KW :: tokenize lexbuf }
+    { FI_KW       :: tokenize lexbuf }
   | "WHILE"
-    { WHILE_KW :: tokenize lexbuf}
+    { WHILE_KW    :: tokenize lexbuf }
   | "DO"
-    { DO_KW :: tokenize lexbuf}
+    { DO_KW       :: tokenize lexbuf }
   | "DONE"
-    { OD_KW ::tokenize lexbuf}
+    { OD_KW       :: tokenize lexbuf }
 
 
   (* TODO : other keywords *)
 
   (* other tokens (no conflict with keywords in VSL) *)
-  | (letter (letter | digit)* as lxm)  '[' (digit* as s) ']'
-    {TAB (lxm, (int_of_string s)) :: tokenize lexbuf} 
+  | (letter (letterMaj | digit)* as lxm)  '[' (digit* as s) ']'
+      { TAB (lxm, (int_of_string s)) :: tokenize lexbuf } 
 
-  | letter (letter | digit)* as lxm
-      { IDENT lxm :: tokenize lexbuf }
+  | letter (letterMaj | digit)* as lxm
+      { IDENT lxm                    :: tokenize lexbuf }
   | '"' (ascii* as lxm) '"'
-      { TEXT lxm  :: tokenize lexbuf }
+      { TEXT lxm                     :: tokenize lexbuf }
   | (digit+) as lxm
-      { INTEGER (int_of_string lxm) :: tokenize lexbuf }
+      { INTEGER (int_of_string lxm)  :: tokenize lexbuf }
 
   (* end-of-file : end up with the empty stream *)
   | eof
