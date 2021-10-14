@@ -28,3 +28,4 @@ type token =
   | WHILE_KW
   | DO_KW
   | OD_KW
+  | TAB of string * int 

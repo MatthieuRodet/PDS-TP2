@@ -2,24 +2,35 @@
 
 type ident = string
 
-type variable = Var of string * int option
+and variable = Var of ident * int option | Tab of ident * int * int option list 
 
-type expression =
+and expression =
   | AddExpression of expression * expression
   | MinusExpression of expression * expression
   | MulExpression of expression * expression
   | DivExpression of expression * expression 
   | ParentheseExpression of expression
   | IntegerExpression of int
-  | VarExpression of variable
+  | VarExpression of ident
 
-type typ =
+
+and typ =
   | Type_Int
 
-type declar = Declaration of variable list
+and item = Expr of expression | Str of string 
 
-type block = Unit of declar list  * expression list
+and declar = Declaration of variable list
 
-type program = Prog of block list 
+and instruction = Affect of variable * expression 
+              | Print of item list 
+              | Read of variable list
+              | If of expression * instruction * instruction option
+              | While of expression * instruction 
+              | Block of block
+
+
+and block = Unit of declar list  * instruction list
+
+and program = Prog of block list 
 
 

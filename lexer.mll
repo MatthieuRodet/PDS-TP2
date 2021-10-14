@@ -46,10 +46,49 @@ rule tokenize = parse
       { DIV      :: tokenize lexbuf }
   | "INT"
       { INT_KW  :: tokenize lexbuf }
+  | "{" 
+      { LB :: tokenize lexbuf }
+  | "}" 
+    { RB :: tokenize lexbuf}
+  | ',' 
+    { COM :: tokenize lexbuf}
+
+  | ":=" 
+    { ASSIGN :: tokenize lexbuf}
+  | "READ"
+    { READ_KW :: tokenize lexbuf }
+   | "PRINT"
+    { PRINT_KW :: tokenize lexbuf }
+  | "RETURN"
+    { RETURN_KW :: tokenize lexbuf }
+  | "VOID" 
+    { VOID_KW ::tokenize lexbuf }
+  | "PROTO"
+    { PROTO_KW :: tokenize lexbuf }
+  | "FUNC"
+    { FUNC_KW :: tokenize lexbuf }
+  | "IF" 
+    { IF_KW :: tokenize lexbuf} 
+  | "THEN"
+    { THEN_KW :: tokenize lexbuf }
+  | "ELSE"
+    { ELSE_KW :: tokenize lexbuf }
+  | "FI"
+    { FI_KW :: tokenize lexbuf }
+  | "WHILE"
+    { WHILE_KW :: tokenize lexbuf}
+  | "DO"
+    { DO_KW :: tokenize lexbuf}
+  | "DONE"
+    { OD_KW ::tokenize lexbuf}
+
 
   (* TODO : other keywords *)
 
   (* other tokens (no conflict with keywords in VSL) *)
+  | (letter (letter | digit)* as lxm)  '[' (digit* as s) ']'
+    {TAB (lxm, (int_of_string s)) :: tokenize lexbuf} 
+
   | letter (letter | digit)* as lxm
       { IDENT lxm :: tokenize lexbuf }
   | '"' (ascii* as lxm) '"'
@@ -60,6 +99,7 @@ rule tokenize = parse
   (* end-of-file : end up with the empty stream *)
   | eof
       { [] }
+
 
   (* catch errors *)
   | _ as c

@@ -1,1 +1,14 @@
-INT a
+{INT a , b
+INT c , e[3]
+INT d[2]
+c := 2 
+a := c + 2
+IF b THEN b:= 2 FI
+IF b THEN b:= 2 ELSE b:= b + 2 FI
+ PRINT a , b 
+ READ b , a
+ {
+     b := 2 
+ }
+ WHILE c DO b := 2 DONE
+}
