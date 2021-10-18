@@ -21,6 +21,15 @@ and symbol =
 
 and symbol_table = symbol list
 
+and variable_table = Vars of variable list 
+
+let rec get_variable_value var_table id = match var_table with 
+  |Vars([]) -> None 
+  |Vars((Var(id0, v))::q) -> if id0 = id then match v with 
+        | None -> None 
+        | Some x -> Some x
+      else  get_variable_value (Vars q) id 
+  |Vars(Tab(_,_,_)::q) -> failwith "todo" 
 
 (* public interface *)
 let lookup tab id =
@@ -32,6 +41,7 @@ let lookup tab id =
         else
           assoc key q
     | [] -> None
+
   in assoc id tab
 
 let add tab sym = sym :: tab
