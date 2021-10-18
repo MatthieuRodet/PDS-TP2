@@ -99,6 +99,11 @@ let llvm_udiv ~(res_var : llvm_var) ~(res_type : llvm_type) ~(left : llvm_value)
 let llvm_return ~(ret_type : llvm_type) ~(ret_value : llvm_value) : llvm_instr =
   "ret " ^ string_of_type ret_type ^ " " ^ string_of_value ret_value ^ "\n"
 
+let llvm_declar_var_int ~(res_var : llvm_var) ~(res_type : llvm_type) : llvm_instr = 
+  "%" ^ string_of_var res_var ^ " = alloca " ^ string_of_type res_type ^ "\n" 
+
+let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_type : llvm_type) : llvm_instr = 
+  "%" ^ string_of_var res_tab ^ " = alloca [" ^ string_of_value res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
 (* defining the 'main' function with ir.body as function body *)
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
   { header = ir.header;
