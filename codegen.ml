@@ -34,12 +34,23 @@ and instr_of_instruction  (instr : instruction) : llvm_ir = match instr with
                                  ir @: (llvm_affect_var out v)
   |Affect(Tab(v, _, _),e) -> failwith "todo"
   |Print([]) -> empty_ir 
-  |Print(a::q) -> failwith "todo"
+  |Print(a::q) -> instr_of_print a @@ instr_of_instruction (Print q)
   |Read([]) -> empty_ir
-  |Read(a::q) -> failwith "todo" 
+  |Read(a::q) -> instr_of_read a @@ instr_of_instruction (Read q)
   |If(e,i,io) -> failwith "todo" 
   |While(e,i) -> failwith "todo"
-  |Block(b) -> failwith "todo"
+  |Block(b) -> ir_of_block b
+
+and instr_of_print (a : item) : llvm_ir = match a with
+    | Expr(e) -> let ir, out = ir_of_expression e in 
+                  (ir @: llvm_print_expr out)
+    | Str(s) -> let x = newtmp() in 
+                let decl = x ^ " = [ " ^ string_of_int (String.length s) ^ " x i8 ] c" ^ s in
+        ({header = Atom(decl); body = Empty} @: (llvm_print_str s))
+
+and instr_of_read (a : variable) : llvm_ir = match a with
+    | Var(ident, _) -> (empty_ir @: llvm_read ident)
+    | Tab(ident, _, _) -> failwith "todo : is 'READ tab[i]' valid ?"
 
 and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
   |[] -> empty_ir 
@@ -56,7 +67,7 @@ and aux_declaration (var : variable ) : llvm_instr = match var with
   |Var(id, _) -> let ir = llvm_declar_var_int ~res_var:id ~res_type:LLVM_type_i32 in ir 
   |Tab(id, size, _) -> let ir = llvm_declar_var_tab ~res_tab:id ~res_size:(LLVM_i32 size) ~res_type:LLVM_type_i32 in ir
 
-and ir_of_variable = function 
+and ir_of_variable (var:variable) : llvm_ir = match var with 
   |Var(id, v) -> failwith "todo"
   |Tab(id, i , l) -> failwith "todo"
 

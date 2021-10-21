@@ -69,7 +69,9 @@ and string_of_ir ir =
   ^ "target triple = \"x86_64-unknown-linux-gnu\"\n"
   ^ "; External declaration of the printf function\n"
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
+  ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
   ^ "\n; Actual code begins\n"
+  ^ "%tmp0 = global [3 x i8] c\"%d\\00\"" 
   ^ string_of_instr_seq ir.header
   ^ "\n\n"
   ^ string_of_instr_seq ir.body
@@ -107,6 +109,13 @@ let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_typ
 let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
   "store i32 " ^ string_of_value res_var ^ ", i32* " ^ string_of_var val_var ^ "\n"
   (* defining the 'main' function with ir.body as function body *)
+let llvm_print_expr ~(print_var : llvm_value) : llvm_instr =
+  "call i32 (i8*, ...)* @printf(i8* %msg, i32 " ^ string_of_value print_var ^ ")"
+let llvm_print_str ~(print_str : string) : llvm_instr =
+  "call i32 (i8*, ...)* @printf(i8* %msg, i32 " ^ print_str ^ ")"
+let llvm_read ~(read_var : llvm_var) : llvm_instr =
+  "call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* %tmp0, i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )"
+
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
   { header = ir.header;
     body = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.body ^ "}\n");
