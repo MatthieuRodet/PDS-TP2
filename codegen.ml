@@ -26,10 +26,12 @@ and ir_of_block = function
   |([], a::q) -> failwith "todo" 
 
 and ir_of_instruction : instruction -> llvm_ir = function 
-  |Affect(v,e) -> failwith "todo" 
-  |Print([]) -> failwith "todo" 
+  |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
+                  ir @: (llvm_affect_var out v)
+  |Affect(Tab(v, _, _),e) -> failwith "todo"
+  |Print([]) -> empty_ir 
   |Print(a::q) -> failwith "todo"
-  |Read([]) -> failwith "todo"
+  |Read([]) -> empty_ir
   |Read(a::q) -> failwith "todo" 
   |If(e,i,io) -> failwith "todo" 
   |While(e,i) -> failwith "todo"

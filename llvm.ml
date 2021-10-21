@@ -104,7 +104,9 @@ let llvm_declar_var_int ~(res_var : llvm_var) ~(res_type : llvm_type) : llvm_ins
 
 let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_type : llvm_type) : llvm_instr = 
   "%" ^ string_of_var res_tab ^ " = alloca [" ^ string_of_value res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
-(* defining the 'main' function with ir.body as function body *)
+let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
+  "store i32 " ^ string_of_value res_var ^ ", i32* " ^ string_of_var val_var ^ "\n"
+  (* defining the 'main' function with ir.body as function body *)
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
   { header = ir.header;
     body = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.body ^ "}\n");
