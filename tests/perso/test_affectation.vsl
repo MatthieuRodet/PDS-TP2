@@ -1,31 +1,7 @@
 {
-    INT a , b
-    INT c , e[3]
-    INT d[2]
+    INT a , b , t[2]
 
-    c := 2 
-    a := c + 2
-    IF b THEN 
-        b:= 2 
-    FI
-    IF (b+2) THEN
-        b:= 2
-    ELSE
-        b:= b + 2
-    FI
-    PRINT a , b 
-    READ b , a
-    {
-        b := 2 
-    }
-    WHILE c DO
-        b := 2
-    DONE
 }
 {
-    INT x, y, z
-
-    READ x, y
-    z := x + y
-    PRINT z
+    INT a , d[5]
 }
