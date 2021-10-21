@@ -21,17 +21,17 @@ and ir_of_prog (prog :  program) : llvm_ir = match prog with
   |Prog(a::q) -> (ir_of_block a) @@ (ir_of_prog (Prog(q))) 
 
 and ir_of_block (b : block) : llvm_ir = match b with 
-  |Unit(declar, instr) -> {header = ir_of_declaration declar ; body = ir_of_instruction instr} 
+  |Unit(declar, instr) -> ir_of_declaration declar @@ ir_of_instruction instr
 
 
-and ir_of_instruction l = match l with 
-  |[] -> Empty
+and ir_of_instruction ( l : instruction list) : llvm_ir  = match l with 
+  |[] -> empty_ir 
   |[a] -> instr_of_instruction a
-  |a::q -> Concat (instr_of_instruction a , ir_of_instruction q)
+  |a::q -> instr_of_instruction a @@ ir_of_instruction q 
 
-and instr_of_instruction  (instr : instruction) : llvm_instr_seq = match instr with 
+and instr_of_instruction  (instr : instruction) : llvm_ir = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
-                  ir @: (llvm_affect_var out v)
+                                 ir @: (llvm_affect_var out v)
   |Affect(Tab(v, _, _),e) -> failwith "todo"
   |Print([]) -> empty_ir 
   |Print(a::q) -> failwith "todo"
@@ -41,10 +41,10 @@ and instr_of_instruction  (instr : instruction) : llvm_instr_seq = match instr w
   |While(e,i) -> failwith "todo"
   |Block(b) -> failwith "todo"
 
-and ir_of_declaration (l : declar list ) : llvm_instr_seq = match l with 
-  |[] -> Empty
-  |[a] -> (aux0_declaration a)
-  |a::q -> Concat((aux0_declaration a), ir_of_declaration (q))
+and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
+  |[] -> empty_ir 
+  |[a] -> {header = (aux0_declaration a) ; body = Empty }
+  |a::q ->  {header = aux0_declaration a ; body = Empty } @@ ir_of_declaration q  
 
 and aux0_declaration (dec : declar ) : llvm_instr_seq = match dec with 
   |Declaration([]) -> Empty 
