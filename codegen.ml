@@ -6,26 +6,30 @@ open SymbolTable
        
 (* main function. returns only a string: the generated code *)
 let rec ir_of_ast (prog : program) : llvm_ir = 
-  let ir, v = ir_of_prog prog in
+  (*let ir, v = ir_of_prog prog in*)
+  let ir = ir_of_prog prog in 
+  let v = LLVM_i32(0) in 
   (* adds the return instruction *)
   let ir = ir @: llvm_return ~ret_type:LLVM_type_i32 ~ret_value:v in
   (* We create the function main *)
   let ir = llvm_define_main ir in
   ir
 
-and ir_of_prog : program -> llvm_ir * llvm_value = function 
-  |Prog([]) -> failwith "todo"
-  |Prog([a]) -> failwith "todo" 
-  |Prog(a::q) -> failwith "todo" 
+and ir_of_prog (prog :  program) : llvm_ir = match prog with 
+  |Prog([]) ->  empty_ir 
+  |Prog([a]) -> ir_of_block a 
+  |Prog(a::q) -> (ir_of_block a) @@ (ir_of_prog (Prog(q))) 
 
-and ir_of_block = function 
-  |([], []) -> failwith "todo" 
-  |([a], l) -> failwith "todo"
-  | (a::q , l ) -> failwith "todo"
-  |([], [a]) -> failwith "todo"
-  |([], a::q) -> failwith "todo" 
+and ir_of_block (b : block) : llvm_ir = match b with 
+  |Unit(declar, instr) -> {header = ir_of_declaration declar ; body = ir_of_instruction instr} 
 
-and ir_of_instruction : instruction -> llvm_ir = function 
+
+and ir_of_instruction l = match l with 
+  |[] -> Empty
+  |[a] -> instr_of_instruction a
+  |a::q -> Concat (instr_of_instruction a , ir_of_instruction q)
+
+and instr_of_instruction  (instr : instruction) : llvm_instr_seq = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
                   ir @: (llvm_affect_var out v)
   |Affect(Tab(v, _, _),e) -> failwith "todo"
@@ -37,12 +41,18 @@ and ir_of_instruction : instruction -> llvm_ir = function
   |While(e,i) -> failwith "todo"
   |Block(b) -> failwith "todo"
 
-and ir_of_declaration = function 
-  |Declaration([]) -> Empty
-  |Declaration([a]) -> Atom(aux_declaration a)
-  |Declaration(a::q) -> Concat(ir_of_declaration (Declaration [a]), ir_of_declaration (Declaration q))
+and ir_of_declaration (l : declar list ) : llvm_instr_seq = match l with 
+  |[] -> Empty
+  |[a] -> (aux0_declaration a)
+  |a::q -> Concat((aux0_declaration a), ir_of_declaration (q))
 
-and aux_declaration dec = match dec with 
+and aux0_declaration (dec : declar ) : llvm_instr_seq = match dec with 
+  |Declaration([]) -> Empty 
+  |Declaration([a]) -> Atom(aux_declaration a)
+  |Declaration(a::q) -> Concat(Atom(aux_declaration a), aux0_declaration (Declaration(q)))
+
+
+and aux_declaration (var : variable ) : llvm_instr = match var with 
   |Var(id, _) -> let ir = llvm_declar_var_int ~res_var:id ~res_type:LLVM_type_i32 in ir 
   |Tab(id, size, _) -> let ir = llvm_declar_var_tab ~res_tab:id ~res_size:(LLVM_i32 size) ~res_type:LLVM_type_i32 in ir
 
