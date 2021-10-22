@@ -1,7 +1,6 @@
 // Assuming that test_unit_int_decl test_unit_int_expr test_unit_affectation pass. 
 {
     INT a
-}
-{
+    
     a := 1-2
 }

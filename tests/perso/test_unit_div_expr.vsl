@@ -1,7 +1,6 @@
 // Assuming that test_unit_int_decl test_unit_int_expr pass. 
 {
     INT a
-}
-{
+    
     a := 2/1
 }

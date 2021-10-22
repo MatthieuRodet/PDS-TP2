@@ -1,7 +1,6 @@
 // Assuming that test_unit_int_decl pass. 
 {
     INT a
-}
-{
+    
     PRINT "Hello World!"
 }
