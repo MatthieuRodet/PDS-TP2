@@ -1,3 +1,5 @@
+open Utils
+
 (* TODO : extend when you extend the language *)
 
 (* This file contains a simple LLVM IR representation *)
@@ -8,6 +10,8 @@ type llvm_type =
 (* TODO: to complete *)
 
 type llvm_var = string
+
+type llvm_label = string
     
 type llvm_value =
   | LLVM_i32 of int
@@ -32,7 +36,11 @@ let empty_ir = {
   header = Empty;
   body = Empty;
 }
-		 
+
+let glob_read = ref (newglob "read")
+let glob_print_int = ref (newglob "printint")
+let glob_print_str = ref (newglob "printstr")
+
 (* appending an instruction in the header: ir @^ i *)
 let (@^) ir i = {
     header = Concat (ir.header, Atom i);
@@ -71,7 +79,8 @@ and string_of_ir ir =
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
   ^ "\n; Actual code begins\n"
-  ^ "%tmp0 = global [3 x i8] c\"%d\\00\"" 
+  ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
+  ^ !glob_print_int ^ " = global [3 x i8] c\"%d\\00\"\n"
   ^ string_of_instr_seq ir.header
   ^ "\n\n"
   ^ string_of_instr_seq ir.body
@@ -80,6 +89,12 @@ and string_of_instr_seq = function
   | Empty -> ""
   | Atom i -> i
   | Concat (li1,li2) -> string_of_instr_seq li1 ^ string_of_instr_seq li2
+
+and string_of_print_args args =
+  match args with
+  | [] -> ""
+  | [a] -> " i32 " ^ string_of_value a
+  | a::q -> " i32 " ^ string_of_value a ^ "," ^ string_of_print_args q
 
 and string_of_instr i = i
 
@@ -109,12 +124,20 @@ let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_typ
 let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
   "store i32 " ^ string_of_value res_var ^ ", i32* " ^ string_of_var val_var ^ "\n"
   (* defining the 'main' function with ir.body as function body *)
-let llvm_print_expr ~(print_var : llvm_value) : llvm_instr =
-  "call i32 (i8*, ...)* @printf(i8* %msg, i32 " ^ string_of_value print_var ^ ")"
-let llvm_print_str ~(print_str : string) : llvm_instr =
-  "call i32 (i8*, ...)* @printf(i8* %msg, i32 " ^ print_str ^ ")"
+let llvm_print ~(print_str : llvm_var) ~(print_args : llvm_value list) : llvm_instr =
+  "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ string_of_var print_str ^ ", i64 0, i64 0)," ^ string_of_print_args print_args ^ " )\n"
+let llvm_str ~(str_label : llvm_label) ~(str : string) : llvm_instr =
+  str_label ^ " = [ " ^ string_of_int (String.length str) ^ " x i8 ] c\"" ^ str ^ "\"\n"
 let llvm_read ~(read_var : llvm_var) : llvm_instr =
-  "call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* %tmp0, i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )"
+  "call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ !glob_read ^ ", i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )\n"
+let llvm_if ~(if_cond : llvm_value) ~(jump_if : llvm_label) ~(jump_else : llvm_label) : llvm_instr =
+  "br il " ^ string_of_value if_cond ^ ", label " ^ jump_if ^ ", label " ^ jump_else ^ "\n"
+
+let llvm_jump ~(jump_label : llvm_label) : llvm_instr =
+  "br label " ^ jump_label ^ "\n"
+
+let llvm_label ~(label : llvm_label) : llvm_instr =
+  label ^ ":\n"
 
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
   { header = ir.header;

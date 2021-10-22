@@ -34,23 +34,49 @@ and instr_of_instruction  (instr : instruction) : llvm_ir = match instr with
                                  ir @: (llvm_affect_var out v)
   |Affect(Tab(v, _, _),e) -> failwith "todo"
   |Print([]) -> empty_ir 
-  |Print(a::q) -> instr_of_print a @@ instr_of_instruction (Print q)
+  |Print(items) -> instr_of_print items
   |Read([]) -> empty_ir
   |Read(a::q) -> instr_of_read a @@ instr_of_instruction (Read q)
-  |If(e,i,io) -> failwith "todo" 
+  |If(e,i,io) -> instr_of_if e i io
   |While(e,i) -> failwith "todo"
   |Block(b) -> ir_of_block b
 
-and instr_of_print (a : item) : llvm_ir = match a with
+and instr_of_print (a : item list) : llvm_ir = 
+    let rec aux_print (a : item list) (ir : llvm_ir) (to_print : string) (args : llvm_value list): llvm_ir * string * llvm_value list =
+      match a with
+      | [] -> ir, to_print, args
+      | (Str s)::q -> aux_print q ir (to_print ^ s) args
+      | (Expr e)::q -> match e with
+                | IntegerExpression(i) -> aux_print q ir (to_print ^ "%d") (args@[LLVM_i32 i])
+                | _ -> let ir2, out = ir_of_expression e in
+                       aux_print q (ir@@ir2) (to_print ^ "%d") (args@[out])
+    in let ir, to_print, args = aux_print a empty_ir "" []
+    in let x = newtmp()
+    in (ir @^ llvm_str x to_print) @: llvm_print x args
+
+(* match a with
     | Expr(e) -> let ir, out = ir_of_expression e in 
                   (ir @: llvm_print_expr out)
     | Str(s) -> let x = newtmp() in 
-                let decl = x ^ " = [ " ^ string_of_int (String.length s) ^ " x i8 ] c" ^ s in
-        ({header = Atom(decl); body = Empty} @: (llvm_print_str s))
+        (empty_ir @: llvm_print_str s) @^ llvm_str x s *)
 
 and instr_of_read (a : variable) : llvm_ir = match a with
     | Var(ident, _) -> (empty_ir @: llvm_read ident)
     | Tab(ident, _, _) -> failwith "todo : is 'READ tab[i]' valid ?"
+
+and instr_of_if e i io : llvm_ir = match io with
+    | None -> failwith "todo"
+    | Some(instr) -> let ir_e, out = ir_of_expression e in
+                 let jump_if = newlab("then") in
+                 let jump_else = newlab("else") in
+                 let jump_endif = newlab("endif") in
+                 let ir = ((ir_e @: llvm_if out jump_if jump_else) 
+                          @: llvm_label jump_if)
+                          @@ ((instr_of_instruction i @: llvm_jump jump_endif) 
+                          @: llvm_label jump_else)
+                          @@ ((instr_of_instruction instr)
+                          @: llvm_label jump_endif)
+                        in ir
 
 and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
   |[] -> empty_ir 

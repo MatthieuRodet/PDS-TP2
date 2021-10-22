@@ -5,5 +5,8 @@
 {
     INT a , d[5]
 
-    a := 2 
+    a := 2
+    PRINT 1, "Hello world"
+    READ a 
+    IF 1 THEN b:=2 ELSE b:=3 FI
 }
