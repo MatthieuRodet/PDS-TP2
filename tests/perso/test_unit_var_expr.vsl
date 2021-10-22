@@ -1,0 +1,8 @@
+// Assuming that test_unit_decl test_unit_read pass. 
+{
+    INT a, b
+}
+{
+    READ a
+    b := a
+}

@@ -32,13 +32,13 @@ and ir_of_instruction ( l : instruction list) : llvm_ir  = match l with
 and instr_of_instruction  (instr : instruction) : llvm_ir = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
                                  ir @: (llvm_affect_var out v)
-  |Affect(Tab(v, _, _),e) -> failwith "todo"
+  |Affect(Tab(v, _, _),e) -> failwith "todo affect tab"
   |Print([]) -> empty_ir 
   |Print(items) -> instr_of_print items
   |Read([]) -> empty_ir
   |Read(a::q) -> instr_of_read a @@ instr_of_instruction (Read q)
   |If(e,i,io) -> instr_of_if e i io
-  |While(e,i) -> failwith "todo"
+  |While(e,i) -> failwith "todo while"
   |Block(b) -> ir_of_block b
 
 and instr_of_print (a : item list) : llvm_ir = 
@@ -54,18 +54,19 @@ and instr_of_print (a : item list) : llvm_ir =
     in let x = newtmp()
     in (ir @^ llvm_str x to_print) @: llvm_print x args
 
-(* match a with
-    | Expr(e) -> let ir, out = ir_of_expression e in 
-                  (ir @: llvm_print_expr out)
-    | Str(s) -> let x = newtmp() in 
-        (empty_ir @: llvm_print_str s) @^ llvm_str x s *)
-
 and instr_of_read (a : variable) : llvm_ir = match a with
     | Var(ident, _) -> (empty_ir @: llvm_read ident)
     | Tab(ident, _, _) -> failwith "todo : is 'READ tab[i]' valid ?"
 
 and instr_of_if e i io : llvm_ir = match io with
-    | None -> failwith "todo"
+    | None -> let ir_e, out = ir_of_expression e in
+                 let jump_if = newlab("then") in
+                 let jump_endif = newlab("endif") in
+                 let ir = ((ir_e @: llvm_if out jump_if jump_endif) 
+                 @: llvm_label jump_if)
+                 @@ ((instr_of_instruction i)
+                 @: llvm_label jump_endif)
+    in ir
     | Some(instr) -> let ir_e, out = ir_of_expression e in
                  let jump_if = newlab("then") in
                  let jump_else = newlab("else") in
@@ -76,7 +77,7 @@ and instr_of_if e i io : llvm_ir = match io with
                           @: llvm_label jump_else)
                           @@ ((instr_of_instruction instr)
                           @: llvm_label jump_endif)
-                        in ir
+                 in ir
 
 and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
   |[] -> empty_ir 
@@ -92,15 +93,6 @@ and aux0_declaration (dec : declar ) : llvm_instr_seq = match dec with
 and aux_declaration (var : variable ) : llvm_instr = match var with 
   |Var(id, _) -> let ir = llvm_declar_var_int ~res_var:id ~res_type:LLVM_type_i32 in ir 
   |Tab(id, size, _) -> let ir = llvm_declar_var_tab ~res_tab:id ~res_size:(LLVM_i32 size) ~res_type:LLVM_type_i32 in ir
-
-and ir_of_variable (var:variable) : llvm_ir = match var with 
-  |Var(id, v) -> failwith "todo"
-  |Tab(id, i , l) -> failwith "todo"
-
-and ir_of_item i t = match i with 
-  |Expr(e) -> failwith "todo"
-  |Str(s) -> failwith "todo"
-
 
 (* translation from VSL+ types to LLVM types *)
 and llvm_type_of_asd_typ : typ -> llvm_type = function
@@ -136,5 +128,5 @@ and ir_of_expression : expression -> llvm_ir * llvm_value = function
       let ir = ir1 @@ ir2 @: llvm_udiv ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
   |ParentheseExpression e -> ir_of_expression e
-  |VarExpression e -> failwith "todo"
+  |VarExpression e -> empty_ir, LLVM_var e
 (* TODO: complete with new cases and functions when you extend your language *)

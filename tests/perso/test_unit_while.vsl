@@ -1,0 +1,8 @@
+// Assuming that test_unit_decl test_unit_read test_unit_var_expr pass. 
+{
+    INT a
+}
+{
+    READ a
+    WHILE a DO READ a DONE
+}

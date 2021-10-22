@@ -1,0 +1,8 @@
+// Assuming that test_unit_int_decl test_unit_int_expr pass. 
+// Count as test_unit_int_expr and test_unit_affectation
+{
+    INT a
+}
+{
+    a := 1
+}

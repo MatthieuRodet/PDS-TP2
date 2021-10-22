@@ -1,0 +1,7 @@
+// Assuming that test_unit_tab_decl pass. 
+{
+    INT a[4]
+}
+{
+    a[0] := 1
+}
