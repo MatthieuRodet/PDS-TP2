@@ -38,8 +38,6 @@ let empty_ir = {
 }
 
 let glob_read = ref (newglob "read")
-let glob_print_int = ref (newglob "printint")
-let glob_print_str = ref (newglob "printstr")
 
 (* appending an instruction in the header: ir @^ i *)
 let (@^) ir i = {
@@ -78,11 +76,10 @@ and string_of_ir ir =
   ^ "; External declaration of the printf function\n"
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
-  ^ "\n; Actual code begins\n"
-  ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
-  ^ !glob_print_int ^ " = global [3 x i8] c\"%d\\00\"\n"
+  ^ "\n; Actual code begins\n\n"
+  ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n\n"
   ^ string_of_instr_seq ir.header
-  ^ "\n\n"
+  ^ "\n"
   ^ string_of_instr_seq ir.body
 
 and string_of_instr_seq = function
@@ -140,8 +137,8 @@ let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
 
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
-  { header = ir.header;
-    body = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.body ^ "}\n");
+  { header = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.header);
+    body = Atom (string_of_instr_seq ir.body ^ "}\n");
   }
 									 
 (* TODO: complete with other LLVM instructions *)

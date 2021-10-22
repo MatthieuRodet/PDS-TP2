@@ -21,27 +21,27 @@ and ir_of_prog (prog :  program) : llvm_ir = match prog with
   |Prog(a::q) -> (ir_of_block a) @@ (ir_of_prog (Prog(q))) 
 
 and ir_of_block (b : block) : llvm_ir = match b with 
-  |Unit(declar, instr) -> ir_of_declaration declar @@ ir_of_instruction instr
+  |Unit(declar, instr) -> ir_of_declaration declar @@ ir_of_instructions instr
 
 
-and ir_of_instruction ( l : instruction list) : llvm_ir  = match l with 
+and ir_of_instructions ( l : instruction list) : llvm_ir  = match l with 
   |[] -> empty_ir 
-  |[a] -> instr_of_instruction a
-  |a::q -> instr_of_instruction a @@ ir_of_instruction q 
+  |[a] -> ir_of_instruction a
+  |a::q -> ir_of_instruction a @@ ir_of_instructions q 
 
-and instr_of_instruction  (instr : instruction) : llvm_ir = match instr with 
+and ir_of_instruction  (instr : instruction) : llvm_ir = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
                                  ir @: (llvm_affect_var out v)
   |Affect(Tab(v, _, _),e) -> failwith "todo affect tab"
   |Print([]) -> empty_ir 
-  |Print(items) -> instr_of_print items
+  |Print(items) -> ir_of_print items
   |Read([]) -> empty_ir
-  |Read(a::q) -> instr_of_read a @@ instr_of_instruction (Read q)
-  |If(e,i,io) -> instr_of_if e i io
-  |While(e,i) -> failwith "todo while"
+  |Read(a::q) -> ir_of_read a @@ ir_of_instruction (Read q)
+  |If(e,i,io) -> ir_of_if e i io
+  |While(e,i) -> ir_of_while e i
   |Block(b) -> ir_of_block b
 
-and instr_of_print (a : item list) : llvm_ir = 
+and ir_of_print (a : item list) : llvm_ir = 
     let rec aux_print (a : item list) (ir : llvm_ir) (to_print : string) (args : llvm_value list): llvm_ir * string * llvm_value list =
       match a with
       | [] -> ir, to_print, args
@@ -54,17 +54,17 @@ and instr_of_print (a : item list) : llvm_ir =
     in let x = newtmp()
     in (ir @^ llvm_str x to_print) @: llvm_print x args
 
-and instr_of_read (a : variable) : llvm_ir = match a with
+and ir_of_read (a : variable) : llvm_ir = match a with
     | Var(ident, _) -> (empty_ir @: llvm_read ident)
     | Tab(ident, _, _) -> failwith "todo : is 'READ tab[i]' valid ?"
 
-and instr_of_if e i io : llvm_ir = match io with
+and ir_of_if e i io : llvm_ir = match io with
     | None -> let ir_e, out = ir_of_expression e in
                  let jump_if = newlab("then") in
                  let jump_endif = newlab("endif") in
                  let ir = ((ir_e @: llvm_if out jump_if jump_endif) 
                  @: llvm_label jump_if)
-                 @@ ((instr_of_instruction i)
+                 @@ ((ir_of_instruction i)
                  @: llvm_label jump_endif)
     in ir
     | Some(instr) -> let ir_e, out = ir_of_expression e in
@@ -73,11 +73,26 @@ and instr_of_if e i io : llvm_ir = match io with
                  let jump_endif = newlab("endif") in
                  let ir = ((ir_e @: llvm_if out jump_if jump_else) 
                           @: llvm_label jump_if)
-                          @@ ((instr_of_instruction i @: llvm_jump jump_endif) 
+                          @@ ((ir_of_instruction i @: llvm_jump jump_endif) 
                           @: llvm_label jump_else)
-                          @@ ((instr_of_instruction instr)
+                          @@ ((ir_of_instruction instr)
                           @: llvm_label jump_endif)
                  in ir
+
+and ir_of_while (cond : expression) (bloc : instruction) : llvm_ir = 
+    let ir_cond, out_cond = ir_of_expression cond in
+    let ir_bloc = ir_of_instruction bloc in
+    let lab_while = newlab "While" in
+    let lab_bloc = newlab "Bloc" in
+    let lab_end = newlab "EndWhile" in
+    (((((((empty_ir
+    @: (llvm_label lab_while))
+    @@ (ir_cond))
+    @: (llvm_if out_cond lab_bloc lab_end))
+    @: (llvm_label lab_bloc))
+    @@ (ir_bloc))
+    @: (llvm_jump lab_while))
+    @: (llvm_label lab_end))
 
 and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
   |[] -> empty_ir 
