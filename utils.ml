@@ -5,7 +5,7 @@ let glob = ref 0
 (* generate a new unique local identifier (starting with %) *)
 let newtmp: unit -> string = function () ->
   tmp := succ !tmp;
-  "%tmp" ^ (string_of_int !tmp)
+  "tmp" ^ (string_of_int !tmp)
 
 (* generate a new unique label starting with str *)
 let newlab str =

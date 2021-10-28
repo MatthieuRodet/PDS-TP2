@@ -2,6 +2,6 @@
 {
     INT a
     
-    READ a
-    WHILE a DO READ a DONE
+    a := 0
+    WHILE a DO a := 1 DONE
 }

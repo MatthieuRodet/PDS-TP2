@@ -15,8 +15,8 @@ let _ =
     print_endline (Prettyprinter.prettyprint ast)*) 
 
     (* Print LLVM IR *)
-    let ir = Codegen.ir_of_ast ast in
-    print_endline (Llvm.string_of_ir ir)
+    let ir, glob_vars = Codegen.ir_of_ast ast in
+    print_endline (Llvm.string_of_ir ir glob_vars)
 
   with
     Lexer.Unexpected_character e ->

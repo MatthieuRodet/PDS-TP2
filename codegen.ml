@@ -3,45 +3,46 @@ open Llvm
 open Utils
 open SymbolTable
 
-       
+(* let glob_vars : (llvm_var * string) list ref = ref [] *)
+type gv_list = (llvm_var * int * string) list
 (* main function. returns only a string: the generated code *)
-let rec ir_of_ast (prog : program) : llvm_ir = 
+let rec ir_of_ast (prog : program) : llvm_ir * gv_list = 
   (*let ir, v = ir_of_prog prog in*)
-  let ir = ir_of_prog prog in 
+  let ir, glob_vars = ir_of_prog prog [] in 
   let v = LLVM_i32(0) in 
   (* adds the return instruction *)
   let ir = ir @: llvm_return ~ret_type:LLVM_type_i32 ~ret_value:v in
   (* We create the function main *)
   let ir = llvm_define_main ir in
-  ir
+  ir, glob_vars
 
-and ir_of_prog (prog :  program) : llvm_ir = match prog with 
-  |Prog([]) ->  empty_ir 
-  |Prog([a]) -> ir_of_block a 
-  |Prog(a::q) -> (ir_of_block a) @@ (ir_of_prog (Prog(q))) 
+and ir_of_prog (prog :  program) (glob_vars : gv_list) : llvm_ir * gv_list = match prog with 
+  |Prog([]) ->  empty_ir, []
+  |Prog([a]) -> ir_of_block a glob_vars
+  |Prog(a::q) -> let ir, gv = ir_of_block a glob_vars in let ir2, gv2 = ir_of_prog (Prog q) gv in ir @@ ir2, gv2
 
-and ir_of_block (b : block) : llvm_ir = match b with 
-  |Unit(declar, instr) -> ir_of_declaration declar @@ ir_of_instructions instr
+and ir_of_block (b : block) (glob_vars : gv_list) : llvm_ir * gv_list = match b with 
+  |Unit(declar, instr) -> let ir, gv = ir_of_instructions instr glob_vars in ir_of_declaration declar @@ ir, gv
 
 
-and ir_of_instructions ( l : instruction list) : llvm_ir  = match l with 
-  |[] -> empty_ir 
-  |[a] -> ir_of_instruction a
-  |a::q -> ir_of_instruction a @@ ir_of_instructions q 
+and ir_of_instructions ( l : instruction list) (glob_vars : gv_list) : llvm_ir * gv_list = match l with 
+  |[] -> empty_ir, []
+  |[a] -> ir_of_instruction a glob_vars
+  |a::q -> let ir, gv = ir_of_instruction a glob_vars in let ir2, gv2 = ir_of_instructions q gv in ir @@ ir2, gv2
 
-and ir_of_instruction  (instr : instruction) : llvm_ir = match instr with 
+and ir_of_instruction  (instr : instruction) (glob_vars : gv_list) : llvm_ir * gv_list = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
-                                 ir @: (llvm_affect_var out v)
-  |Affect(Tab(v, _, _),e) -> failwith "todo affect tab"
-  |Print([]) -> empty_ir 
-  |Print(items) -> ir_of_print items
-  |Read([]) -> empty_ir
-  |Read(a::q) -> ir_of_read a @@ ir_of_instruction (Read q)
-  |If(e,i,io) -> ir_of_if e i io
-  |While(e,i) -> ir_of_while e i
-  |Block(b) -> ir_of_block b
+                                 ir @: (llvm_affect_var out v), glob_vars
+  |Affect(Tab(v, _, _),e) -> failwith "todo affect tab", glob_vars
+  |Print([]) -> empty_ir, glob_vars
+  |Print(items) -> ir_of_print items glob_vars
+  |Read([]) -> empty_ir, glob_vars
+  |Read(a::q) -> let ir, gv = ir_of_instruction (Read q) glob_vars in ir_of_read a @@ ir, gv
+  |If(e,i,io) -> ir_of_if e i io glob_vars
+  |While(e,i) -> ir_of_while e i glob_vars
+  |Block(b) -> ir_of_block b glob_vars
 
-and ir_of_print (a : item list) : llvm_ir = 
+and ir_of_print (a : item list) (glob_vars : gv_list) : llvm_ir * gv_list = 
     let rec aux_print (a : item list) (ir : llvm_ir) (to_print : string) (args : llvm_value list): llvm_ir * string * llvm_value list =
       match a with
       | [] -> ir, to_print, args
@@ -51,48 +52,55 @@ and ir_of_print (a : item list) : llvm_ir =
                 | _ -> let ir2, out = ir_of_expression e in
                        aux_print q (ir@@ir2) (to_print ^ "%d") (args@[out])
     in let ir, to_print, args = aux_print a empty_ir "" []
-    in let x = newtmp()
-    in (ir @^ llvm_str x to_print) @: llvm_print x args
+    in let x = newglob(".fmt")
+    in let to_print_final, len = string_transform to_print
+    in ir @: llvm_print x len args, (x, len, to_print_final)::glob_vars
 
 and ir_of_read (a : variable) : llvm_ir = match a with
     | Var(ident, _) -> (empty_ir @: llvm_read ident)
     | Tab(ident, _, _) -> failwith "todo : is 'READ tab[i]' valid ?"
 
-and ir_of_if e i io : llvm_ir = match io with
+and ir_of_if e i io (glob_vars : gv_list) : llvm_ir * gv_list = match io with
     | None -> let ir_e, out = ir_of_expression e in
-                 let jump_if = newlab("then") in
-                 let jump_endif = newlab("endif") in
-                 let ir = ((ir_e @: llvm_if out jump_if jump_endif) 
+                 let out_cond = newtmp() in
+                 let jump_if = newlab("Then") in
+                 let jump_endif = newlab("Endif") in
+                 let ir, gv = ir_of_instruction i glob_vars in
+                 let ir = (((ir_e @: llvm_cmp out_cond out) @: llvm_if (LLVM_var out_cond) jump_if jump_endif) 
                  @: llvm_label jump_if)
-                 @@ ((ir_of_instruction i)
+                 @@ ((ir @: llvm_jump jump_endif)
                  @: llvm_label jump_endif)
-    in ir
+    in ir, gv
     | Some(instr) -> let ir_e, out = ir_of_expression e in
-                 let jump_if = newlab("then") in
-                 let jump_else = newlab("else") in
-                 let jump_endif = newlab("endif") in
-                 let ir = ((ir_e @: llvm_if out jump_if jump_else) 
+                 let out_cond = newtmp() in
+                 let jump_if = newlab("Then") in
+                 let jump_else = newlab("Else") in
+                 let jump_endif = newlab("Endif") in
+                 let ir_then, gv = ir_of_instruction i glob_vars in
+                 let ir_else, gv2 = ir_of_instruction instr gv in
+                 let ir = (((ir_e @: llvm_cmp out_cond out) @: llvm_if (LLVM_var out_cond) jump_if jump_else) 
                           @: llvm_label jump_if)
-                          @@ ((ir_of_instruction i @: llvm_jump jump_endif) 
+                          @@ ((ir_then @: llvm_jump jump_endif) 
                           @: llvm_label jump_else)
-                          @@ ((ir_of_instruction instr)
+                          @@ ((ir_else @: llvm_jump jump_endif)
                           @: llvm_label jump_endif)
-                 in ir
+                 in ir, gv2
 
-and ir_of_while (cond : expression) (bloc : instruction) : llvm_ir = 
+and ir_of_while (cond : expression) (bloc : instruction) (glob_vars : gv_list) : llvm_ir * gv_list = 
     let ir_cond, out_cond = ir_of_expression cond in
-    let ir_bloc = ir_of_instruction bloc in
+    let cond = newtmp() in
+    let ir_bloc, gv = ir_of_instruction bloc glob_vars in
     let lab_while = newlab "While" in
     let lab_bloc = newlab "Bloc" in
     let lab_end = newlab "EndWhile" in
-    (((((((empty_ir
+    ((((((((empty_ir @: llvm_jump lab_while)
     @: (llvm_label lab_while))
-    @@ (ir_cond))
-    @: (llvm_if out_cond lab_bloc lab_end))
+    @@ (ir_cond @: (llvm_cmp cond out_cond)))
+    @: (llvm_if (LLVM_var cond) lab_bloc lab_end))
     @: (llvm_label lab_bloc))
     @@ (ir_bloc))
     @: (llvm_jump lab_while))
-    @: (llvm_label lab_end))
+    @: (llvm_label lab_end)), gv
 
 and ir_of_declaration (l : declar list ) : llvm_ir = match l with 
   |[] -> empty_ir 
@@ -143,5 +151,7 @@ and ir_of_expression : expression -> llvm_ir * llvm_value = function
       let ir = ir1 @@ ir2 @: llvm_udiv ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
   |ParentheseExpression e -> ir_of_expression e
-  |VarExpression e -> empty_ir, LLVM_var e
+  |VarExpression e -> 
+      let out = newtmp() in
+      empty_ir @: (llvm_var_expr out e), LLVM_var out
 (* TODO: complete with new cases and functions when you extend your language *)

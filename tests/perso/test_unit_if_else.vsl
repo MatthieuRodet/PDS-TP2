@@ -2,5 +2,5 @@
 {
     INT a
     
-    IF 1 THEN a := 2 ELSE a := 3 FI
+    IF a THEN a := 2 ELSE a := 3 FI
 }

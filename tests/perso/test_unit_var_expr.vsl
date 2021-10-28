@@ -2,6 +2,6 @@
 {
     INT a, b
     
-    READ a
-    b := a
+    a := 2
+    b := a + 2
 }

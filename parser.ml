@@ -36,7 +36,7 @@ and block = parser
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)
 
 and declar = parser  
-  |[< 'INT_KW ; content =  list1 (variable) (comma) >] ->print_string("parser : ok ");  Declaration(content)
+  |[< 'INT_KW ; content =  list1 (variable) (comma) >] -> Declaration(content)
 
 and variable = parser 
   |[< 'IDENT content  >] -> Var(content, None)

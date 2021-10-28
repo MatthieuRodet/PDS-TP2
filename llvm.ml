@@ -7,6 +7,7 @@ open Utils
 
 type llvm_type =
   | LLVM_type_i32
+  | LLVM_type_i32_ptr
 (* TODO: to complete *)
 
 type llvm_var = string
@@ -60,24 +61,32 @@ let (@@) ir1 ir2 = {
 (* actual IR generation *)
 let rec string_of_type = function
   | LLVM_type_i32 -> "i32"
+  | LLVM_type_i32_ptr -> "i32*"
 
-and string_of_var x = x
+and string_of_var x = "%" ^ x
 
 and string_of_value = function
   | LLVM_i32 n -> string_of_int n
   | LLVM_var x -> string_of_var x
 		     
-and string_of_ir ir =
+and string_of_ir ir glob_vars =
   (* this header describe to LLVM the target
    * and declare the external function printf
    *)
+  let rec glob_vars_to_string (glob_vars : (llvm_var * int * string) list) =
+    match glob_vars with
+    | [] -> ""
+    | (id, len, content)::tl -> 
+      id ^ " = global [" ^ string_of_int len ^ " x i8] c\"" ^ content ^ "\"\n" ^ glob_vars_to_string tl
+  in
   "; Target\n"
   ^ "target triple = \"x86_64-unknown-linux-gnu\"\n"
   ^ "; External declaration of the printf function\n"
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
   ^ "\n; Actual code begins\n\n"
-  ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n\n"
+  ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
+  ^ glob_vars_to_string glob_vars ^ "\n"
   ^ string_of_instr_seq ir.header
   ^ "\n"
   ^ string_of_instr_seq ir.body
@@ -90,8 +99,7 @@ and string_of_instr_seq = function
 and string_of_print_args args =
   match args with
   | [] -> ""
-  | [a] -> " i32 " ^ string_of_value a
-  | a::q -> " i32 " ^ string_of_value a ^ "," ^ string_of_print_args q
+  | a::q -> ", i32 " ^ string_of_value a ^ string_of_print_args q
 
 and string_of_instr i = i
 
@@ -114,24 +122,27 @@ let llvm_return ~(ret_type : llvm_type) ~(ret_value : llvm_value) : llvm_instr =
   "ret " ^ string_of_type ret_type ^ " " ^ string_of_value ret_value ^ "\n"
 
 let llvm_declar_var_int ~(res_var : llvm_var) ~(res_type : llvm_type) : llvm_instr = 
-  "%" ^ string_of_var res_var ^ " = alloca " ^ string_of_type res_type ^ "\n" 
+  string_of_var res_var ^ " = alloca " ^ string_of_type res_type ^ "\n" 
 
 let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_type : llvm_type) : llvm_instr = 
-  "%" ^ string_of_var res_tab ^ " = alloca [" ^ string_of_value res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
+  string_of_var res_tab ^ " = alloca [" ^ string_of_value res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
+let llvm_var_expr ~(dest : llvm_var) ~(var : llvm_var) : llvm_instr =
+  string_of_var dest ^ " = load i32, i32* " ^ string_of_var var ^ "\n"
 let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
   "store i32 " ^ string_of_value res_var ^ ", i32* " ^ string_of_var val_var ^ "\n"
   (* defining the 'main' function with ir.body as function body *)
-let llvm_print ~(print_str : llvm_var) ~(print_args : llvm_value list) : llvm_instr =
-  "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ string_of_var print_str ^ ", i64 0, i64 0)," ^ string_of_print_args print_args ^ " )\n"
-let llvm_str ~(str_label : llvm_label) ~(str : string) : llvm_instr =
-  str_label ^ " = [ " ^ string_of_int (String.length str) ^ " x i8 ] c\"" ^ str ^ "\"\n"
+let llvm_print ~(print_str : llvm_var) ~(len : int)~(print_args : llvm_value list) : llvm_instr =
+  "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" ^ string_of_int len ^ " x i8], [" ^ string_of_int len ^ " x i8]* " ^ print_str ^ ", i64 0, i64 0)" ^ string_of_print_args print_args ^ " )\n"
+let llvm_str ~(str_label : llvm_label) ~(size : int) ~(str : string) : llvm_instr =
+  str_label ^ " = [ " ^ string_of_int size ^ " x i8 ] c\"" ^ str ^ "\"\n"
 let llvm_read ~(read_var : llvm_var) : llvm_instr =
-  "call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ !glob_read ^ ", i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )\n"
+  "call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ !glob_read ^ ", i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )\n"
 let llvm_if ~(if_cond : llvm_value) ~(jump_if : llvm_label) ~(jump_else : llvm_label) : llvm_instr =
-  "br il " ^ string_of_value if_cond ^ ", label " ^ jump_if ^ ", label " ^ jump_else ^ "\n"
-
+  "br i1 " ^ string_of_value if_cond ^ ", label %" ^ jump_if ^ ", label %" ^ jump_else ^ "\n"
+let llvm_cmp ~(out : llvm_var) ~(cond : llvm_value) : llvm_instr =
+  string_of_var out ^ " = icmp ne i32 " ^ string_of_value cond ^ ", 0\n"
 let llvm_jump ~(jump_label : llvm_label) : llvm_instr =
-  "br label " ^ jump_label ^ "\n"
+  "br label %" ^ jump_label ^ "\n"
 
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"

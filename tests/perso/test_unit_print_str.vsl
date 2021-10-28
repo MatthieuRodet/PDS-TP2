@@ -2,5 +2,5 @@
 {
     INT a
     
-    PRINT "Hello World!"
+    PRINT "Hello World!\n"
 }
