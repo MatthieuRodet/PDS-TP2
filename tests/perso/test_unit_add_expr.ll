@@ -13,6 +13,8 @@ define i32 @main() {
 
 %tmp1 = add i32 1, 1
 store i32 %tmp1, i32* %a
+%tmp2 = add i32 2, 2
+store i32 %tmp2, i32* %a
 ret i32 0
 }
 

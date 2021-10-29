@@ -3,8 +3,10 @@ open Llvm
 open Utils
 open SymbolTable
 
-(* let glob_vars : (llvm_var * string) list ref = ref [] *)
+
 type gv_list = (llvm_var * int * string) list
+
+
 (* main function. returns only a string: the generated code *)
 let rec ir_of_ast (prog : program) : llvm_ir * gv_list = 
   (*let ir, v = ir_of_prog prog in*)
@@ -24,7 +26,6 @@ and ir_of_prog (prog :  program) (glob_vars : gv_list) : llvm_ir * gv_list = mat
 and ir_of_block (b : block) (glob_vars : gv_list) : llvm_ir * gv_list = match b with 
   |Unit(declar, instr) -> let ir, gv = ir_of_instructions instr glob_vars in ir_of_declaration declar @@ ir, gv
 
-
 and ir_of_instructions ( l : instruction list) (glob_vars : gv_list) : llvm_ir * gv_list = match l with 
   |[] -> empty_ir, []
   |[a] -> ir_of_instruction a glob_vars
@@ -33,7 +34,7 @@ and ir_of_instructions ( l : instruction list) (glob_vars : gv_list) : llvm_ir *
 and ir_of_instruction  (instr : instruction) (glob_vars : gv_list) : llvm_ir * gv_list = match instr with 
   |Affect(Var(v, _),e) -> let ir, out = ir_of_expression e in
                                  ir @: (llvm_affect_var out v), glob_vars
-  |Affect(Tab(v, _, _),e) -> failwith "todo affect tab", glob_vars
+  |Affect(Tab(v, _, _),e) -> failwith "todo affect tab"
   |Print([]) -> empty_ir, glob_vars
   |Print(items) -> ir_of_print items glob_vars
   |Read([]) -> empty_ir, glob_vars
@@ -112,7 +113,6 @@ and aux0_declaration (dec : declar ) : llvm_instr_seq = match dec with
   |Declaration([a]) -> Atom(aux_declaration a)
   |Declaration(a::q) -> Concat(Atom(aux_declaration a), aux0_declaration (Declaration(q)))
 
-
 and aux_declaration (var : variable ) : llvm_instr = match var with 
   |Var(id, _) -> let ir = llvm_declar_var_int ~res_var:id ~res_type:LLVM_type_i32 in ir 
   |Tab(id, size, _) -> let ir = llvm_declar_var_tab ~res_tab:id ~res_size:(LLVM_i32 size) ~res_type:LLVM_type_i32 in ir
@@ -154,4 +154,3 @@ and ir_of_expression : expression -> llvm_ir * llvm_value = function
   |VarExpression e -> 
       let out = newtmp() in
       empty_ir @: (llvm_var_expr out e), LLVM_var out
-(* TODO: complete with new cases and functions when you extend your language *)

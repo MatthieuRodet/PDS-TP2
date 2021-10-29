@@ -15,7 +15,6 @@ and expression =
   | IntegerExpression of int
   | VarExpression of ident
 
-
 and typ =
   | Type_Int
 
@@ -34,11 +33,8 @@ and instruction =
   | While of expression * instruction 
   | Block of block
 
-
 and block =
   | Unit of declar list * instruction list
 
 and program =
   | Prog of block list 
-
-

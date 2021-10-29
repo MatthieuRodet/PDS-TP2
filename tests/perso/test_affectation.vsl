@@ -1,5 +1,5 @@
 {
-    INT a , d[5]
+    INT a , d[5], b
 
     a := 2
     PRINT 1, "Hello world"
