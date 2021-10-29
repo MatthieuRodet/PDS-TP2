@@ -9,6 +9,7 @@ main.native: $(SRC)
 
 clean:
 	ocamlbuild -clean
+	find tests -type f -not -name "*.vsl" -not -name "*.test_in" -delete
 
 tests_comilation:
 	for f in ./*/*/*.vsl ; do echo "\nProcessing $$f file..\n" ; ./compile $$f ; echo "\n$$f done\n" ; done
