@@ -2,7 +2,6 @@ _build
 main.native
 note.txt
 /.*
-#/tests/*/*
-#!tests/*/*.vsl
-/tests/perso
-tests/perso
+/tests/*/*
+!tests/*/*.vsl
+!tests/*/*.test_in
