@@ -1,10 +1,14 @@
 // Assuming that test_unit_int_decl test_unit_int_expr pass. 
 {
     INT a
+    INT b
     
+    b := 0
     {
         INT b
         a := 1
         b := 2
+        PRINT "In block :\na = ", a, "\nb = ", b
     }
+    PRINT "Out block :\na = ", a, "\nb = ", b
 }

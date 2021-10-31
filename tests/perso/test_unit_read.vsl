@@ -3,7 +3,5 @@
     INT a
     
     READ a
-    READ a
-    READ a
-    READ a
+    PRINT a
 }

@@ -69,16 +69,10 @@ and string_of_value = function
   | LLVM_i32 n -> string_of_int n
   | LLVM_var x -> string_of_var x
 		     
-and string_of_ir ir glob_vars =
+and string_of_ir ir =
   (* this header describe to LLVM the target
    * and declare the external function printf
    *)
-  let rec glob_vars_to_string (glob_vars : (llvm_var * int * string) list) =
-    match glob_vars with
-    | [] -> ""
-    | (id, len, content)::tl -> 
-      id ^ " = global [" ^ string_of_int len ^ " x i8] c\"" ^ content ^ "\"\n" ^ glob_vars_to_string tl
-  in
   "; Target\n"
   ^ "target triple = \"x86_64-unknown-linux-gnu\"\n"
   ^ "; External declaration of the printf function\n"
@@ -86,7 +80,6 @@ and string_of_ir ir glob_vars =
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
   ^ "\n; Actual code begins\n\n"
   ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
-  ^ glob_vars_to_string glob_vars ^ "\n"
   ^ string_of_instr_seq ir.header
   ^ "\n"
   ^ string_of_instr_seq ir.body
@@ -134,7 +127,7 @@ let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
 let llvm_print ~(print_str : llvm_var) ~(len : int)~(print_args : llvm_value list) : llvm_instr =
   "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" ^ string_of_int len ^ " x i8], [" ^ string_of_int len ^ " x i8]* " ^ print_str ^ ", i64 0, i64 0)" ^ string_of_print_args print_args ^ " )\n"
 let llvm_str ~(str_label : llvm_label) ~(size : int) ~(str : string) : llvm_instr =
-  str_label ^ " = [ " ^ string_of_int size ^ " x i8 ] c\"" ^ str ^ "\"\n"
+  str_label ^ " = global [ " ^ string_of_int size ^ " x i8 ] c\"" ^ str ^ "\"\n"
 let llvm_read ~(read_var : llvm_var) : llvm_instr =
   "call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* " ^ !glob_read ^ ", i64 0, i64 0), i32* " ^ string_of_var read_var ^ " )\n"
 let llvm_if ~(if_cond : llvm_value) ~(jump_if : llvm_label) ~(jump_else : llvm_label) : llvm_instr =
@@ -148,8 +141,8 @@ let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
 
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
-  { header = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.header);
-    body = Atom (string_of_instr_seq ir.body ^ "}\n");
+  { header = ir.header;
+    body = Atom ("define i32 @main() {\n" ^ string_of_instr_seq ir.body ^ "}\n");
   }
 									 
 (* TODO: complete with other LLVM instructions *)
