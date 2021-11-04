@@ -5,3 +5,4 @@ note.txt
 /tests/*/*
 !tests/*/*.vsl
 !tests/*/*.test_in
+compile

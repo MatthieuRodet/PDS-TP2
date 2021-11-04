@@ -3,8 +3,8 @@
 type ident = string
 
 and variable =
-  | Var of ident * int option 
-  | Tab of ident * int * int option list 
+  | Var of ident
+  | Tab of ident * int
 
 and expression =
   | AddExpression of expression * expression

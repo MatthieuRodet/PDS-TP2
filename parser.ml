@@ -39,8 +39,8 @@ and declar = parser
   |[< 'INT_KW ; content =  list1 (variable) (comma) >] -> Declaration(content)
 
 and variable = parser 
-  |[< 'IDENT content  >] -> Var(content, None)
-  |[< 'TAB (id,size) >] -> Tab(id, size , [])
+  |[< 'IDENT content  >] -> Var(content)
+  |[< 'TAB (id,size) >] -> Tab(id, size)
 
 and item = parser 
   |[< 'TEXT s >] -> Str(s) 

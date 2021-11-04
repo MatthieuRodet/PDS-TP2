@@ -5,10 +5,18 @@
     
     b := 0
     {
-        INT b
+        INT c
         a := 1
         b := 2
-        PRINT "In block :\na = ", a, "\nb = ", b
+        PRINT "In block 1 :\na = ", a, "\nb = ", b, "\n"
     }
-    PRINT "Out block :\na = ", a, "\nb = ", b
+    {
+        INT a
+        INT b
+        a := 2
+        b := 4
+        c := 8
+        PRINT "In block 2 :\na = ", a, "\nb = ", b, "\n"
+    }
+    PRINT "Out block :\na = ", a, "\nb = ", b, "\n"
 }

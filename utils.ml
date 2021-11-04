@@ -1,6 +1,7 @@
 let tmp = ref 0
 let lab = ref 0
 let glob = ref 0
+let uniq_ident = ref 0
 
 (* generate a new unique local identifier (starting with %) *)
 let newtmp: unit -> string = function () ->
@@ -16,6 +17,11 @@ let newlab str =
 let newglob str =
   glob := succ !glob;
   "@" ^ str ^ (string_of_int !glob)
+
+(* generate a new unique identifier. Used to differenciate multiple declaration of variable with same name. *)
+let newuniqid str =
+  incr uniq_ident;
+  str ^ string_of_int !uniq_ident
 
 (* transform escaped newlines ('\' 'n') into newline form suitable for LLVM
  * and append the NUL character (end of string)
