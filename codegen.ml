@@ -52,7 +52,7 @@ and ir_of_print (a : item list) (sym_tab : symbol_table) : llvm_ir =
       | [] -> ir, to_print, args
       | (Str s)::q -> aux_print q ir (to_print ^ s) args
       | (Expr e)::q -> match e with
-                | IntegerExpression(i) -> aux_print q ir (to_print ^ "%d") (args@[LLVM_i32 i])
+                | Unit1(Unit0(IntegerExpression(i))) -> aux_print q ir (to_print ^ "%d") (args@[LLVM_i32 i])
                 | _ -> let ir2, out = ir_of_expression e sym_tab in
                        aux_print q (ir@@ir2) (to_print ^ "%d") (args@[out])
     in let ir, to_print, args = aux_print a empty_ir "" []
@@ -133,32 +133,41 @@ and llvm_type_of_asd_typ : typ -> llvm_type = function
 (* all expressions have type LLVM_type_i32 *)
 (* they return code (llvm_ir) and expression result (llvm_value) *)
 and ir_of_expression (e : expression) (sym_tab : symbol_table) : llvm_ir * llvm_value = match e with
-  | IntegerExpression i ->
-     empty_ir, LLVM_i32 i
-  | AddExpression (e1,e2) ->
-     let ir1, v1 = ir_of_expression e1 sym_tab in
-     let ir2, v2 = ir_of_expression e2 sym_tab in
+    | AddExpression([]) -> empty_ir, LLVM_i32 0
+    | AddExpression (e1::e2) ->
+     let ir1, v1 = ir_of_exp_prio_1 e1 sym_tab in
+     let ir2, v2 = ir_of_expression (AddExpression e2) sym_tab in
      let x = newtmp () in
      let ir = ir1 @@ ir2 @: llvm_add ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in
      ir, LLVM_var x
-  | MulExpression (e1,e2) -> 
-      let ir1, v1 = ir_of_expression e1 sym_tab in
-      let ir2, v2 = ir_of_expression e2 sym_tab in 
-      let x = newtmp () in 
-      let ir = ir1 @@ ir2 @: llvm_mul ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
-      ir, LLVM_var x 
-  | MinusExpression (e1,e2) -> 
-      let ir1, v1 = ir_of_expression e1 sym_tab in
-      let ir2, v2 = ir_of_expression e2 sym_tab in
+    | MinusExpression([]) -> empty_ir, LLVM_i32 0
+    | MinusExpression (e1::e2) -> 
+      let ir1, v1 = ir_of_exp_prio_1 e1 sym_tab in
+      let ir2, v2 = ir_of_expression (MinusExpression e2) sym_tab in
       let x = newtmp () in 
       let ir = ir1 @@ ir2 @: llvm_sub ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
-  | DivExpression (e1,e2) -> 
-      let ir1, v1 = ir_of_expression e1 sym_tab in
-      let ir2, v2 = ir_of_expression e2 sym_tab in
+  | Unit1(e) -> ir_of_exp_prio_1 e sym_tab
+
+and ir_of_exp_prio_1 (e : expPrio1) (sym_tab : symbol_table) : llvm_ir * llvm_value = match e with
+    | MulExpression([]) -> empty_ir, LLVM_i32 1
+    | MulExpression(e1::e2) ->
+      let ir1, v1 = ir_of_exp_prio_0 e1 sym_tab in
+      let ir2, v2 = ir_of_exp_prio_1 (MulExpression e2) sym_tab in
+      let x = newtmp () in 
+      let ir = ir1 @@ ir2 @: llvm_mul ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
+      ir, LLVM_var x 
+    | DivExpression([]) -> empty_ir, LLVM_i32 1
+    | DivExpression(e1::e2) -> 
+      let ir1, v1 = ir_of_exp_prio_0 e1 sym_tab in
+      let ir2, v2 = ir_of_exp_prio_1 (DivExpression e2) sym_tab in
       let x = newtmp () in 
       let ir = ir1 @@ ir2 @: llvm_udiv ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2 in 
       ir, LLVM_var x 
+    | Unit0(e) -> ir_of_exp_prio_0 e sym_tab 
+
+and ir_of_exp_prio_0 (e : expPrio0) (sym_tab : symbol_table) : llvm_ir * llvm_value = match e with
+  | IntegerExpression i -> empty_ir, LLVM_i32 i
   |ParentheseExpression e -> ir_of_expression e sym_tab
   |VarExpression e ->
     match uniq_id_of_symbol_table sym_tab e with

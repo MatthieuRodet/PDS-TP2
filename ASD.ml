@@ -7,10 +7,16 @@ and variable =
   | Tab of ident * int
 
 and expression =
-  | AddExpression of expression * expression
-  | MinusExpression of expression * expression
-  | MulExpression of expression * expression
-  | DivExpression of expression * expression 
+  | AddExpression of expPrio1 list
+  | MinusExpression of expPrio1 list
+  | Unit1 of expPrio1
+
+and expPrio1 =
+  | MulExpression of expPrio0 list
+  | DivExpression of expPrio0 list
+  | Unit0 of expPrio0
+
+and expPrio0 =
   | ParentheseExpression of expression
   | IntegerExpression of int
   | VarExpression of ident

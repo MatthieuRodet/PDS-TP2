@@ -55,32 +55,38 @@ and instruction = parser
   | [< content = block>] -> Block(content)
 
 
-
 and expression = parser
-  | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
-  | [< e1 = factor; e = expression_aux e1 >] -> e
+  | [< e1 = parsePrio1 ; aux = expression_aux e1 >] -> aux
 
 and expression_aux e1 = parser
-  | [< 'PLUS;  e2 = factor; e = expression_aux (AddExpression (e1, e2)) >] -> e
-  | [< 'MINUS;  e2 = factor; e = expression_aux (MinusExpression (e1, e2)) >] -> e
-  | [< 'MUL;  e2 = factor; e = expression_aux (MulExpression (e1, e2)) >] -> e
-  | [< 'DIV;  e2 = factor; e = expression_aux (DivExpression (e1, e2)) >] -> e
-  | [<>] -> e1
-  (* TODO : that's all? *)
+  | [< 'PLUS;  e2 = list1 parsePrio1 plus >] -> AddExpression(e1::e2)
+  | [< 'MINUS;  e2 = list1 parsePrio1 minus >] -> MinusExpression(e1::e2)
+  | [< >] -> Unit1 e1
 
-and factor = parser
-  | [< e1 = primary; e = factor_aux e1 >] -> e
-  | [< e = expression >] -> e
+and parsePrio1 = parser
+  | [< e1 = parsePrio0 ; aux = parsePrio1_aux e1 >] -> aux
 
-and factor_aux e1 = parser
-  | [<>] -> e1
-  (* TODO : that's all? *)
+and parsePrio1_aux e1 = parser
+  | [< 'MUL;  e2 = list1 parsePrio0 mul >] -> MulExpression(e1::e2)
+  | [< 'DIV;  e2 = list1 parsePrio0 div >] -> DivExpression(e1::e2)
+  | [< >] -> Unit0 e1
 
-and primary = parser
+and parsePrio0 = parser
+  | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
   | [< 'INTEGER x >] -> IntegerExpression x
-  | [< 'IDENT x>] -> VarExpression(x)
-  | [<>] -> failwith("Bad Parsing 2")
-  (* TODO : that's all? *)
+  | [< 'IDENT x>] -> VarExpression x
+
+and plus = parser
+  | [< 'PLUS >] -> ()
+
+and minus = parser
+  | [< 'MINUS >] -> ()
+
+and mul = parser
+  | [< 'MUL >] -> ()
+
+and div = parser
+  | [< 'DIV >] -> ()
 
 and comma = parser
   | [< 'COM >] -> ()
