@@ -42,5 +42,13 @@ and instruction =
 and block =
   | Unit of declar list * instruction list
 
-and program =
-  | Prog of block list 
+and ret_type = 
+  |T_Int 
+  |T_Void
+
+and func = 
+  |Proto of ret_type*ident*(variable list) 
+  |Func of ret_type*ident*(variable list)*instruction
+
+and program = 
+  |Prog of func list

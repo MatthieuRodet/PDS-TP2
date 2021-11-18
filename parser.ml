@@ -30,7 +30,27 @@ let list0 p sep = parser
 
 (* TODO : change when you extend the language *)
 let rec program =  parser
-  | [< e =  many block ; _ = Stream.empty ?? "unexpected input at the end" >] -> Prog(e)
+  | [< e =  many func ; _ = Stream.empty ?? "unexpected input at the end" >] -> Prog(e)
+
+and func = parser 
+  | [< 'PROTO_KW ; content = proto >] -> content
+  | [< 'FUNC_KW ;  content = function_block >] -> content
+
+and declar_function = parser 
+   [< ret_type = parse_type ; name = parse_name ; 'LP ; variables = list0 (variable) (comma)  ; 'RP >] -> ret_type, name, variables
+
+and parse_type = parser 
+  |[< 'INT_KW >] -> T_Int
+  |[< 'VOID_KW >] -> T_Void
+
+and parse_name = parser 
+  |[< 'IDENT content >] -> content
+
+and proto = parser 
+  | [< ret_type,  name , variables = declar_function >] -> Proto(ret_type, name, variables)
+
+and function_block = parser
+  | [< ret_type , name ,variables = declar_function ; instr = instruction >] -> Func(ret_type, name, variables, instr)
 
 and block = parser 
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)
@@ -92,5 +112,4 @@ and comma = parser
   | [< 'COM >] -> ()
 
 and else_parser = parser 
-  | [< 'ELSE_KW >] -> () 
-
+  | [< 'ELSE_KW >] -> ()

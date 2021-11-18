@@ -3,7 +3,20 @@ open ASD
 (* main function. return only a string *)
 let rec prettyprint ast = match ast with 
   | Prog([]) -> ""
-  | Prog(a::q) -> "{\n" ^ prettyprint_block a 0 ^ "}\n" ^  prettyprint (Prog(q)) 
+  | Prog(a::q) ->  prettyprint_func a  ^ "\n" ^  prettyprint (Prog(q)) 
+
+and prettyprint_func ast = match ast with 
+  |Proto(t, id, v) -> "PROTO " ^ prettyprint_type t ^ " " ^ id ^ " ("  ^ prettyprint_args(v) ^")\n"
+  |Func(t, id, v , instruc) -> "FUNC " ^ prettyprint_type t ^ " " ^ id ^ " (" ^ prettyprint_args(v) ^ ")\n" ^ prettyprint_instr instruc 1 
+
+and prettyprint_type t = match t with 
+  |T_Int -> "INT"
+  |T_Void -> "VOID"
+
+and prettyprint_args v = match v with 
+  |[] -> ""
+  |[a] -> prettyprint_variable a 
+  |a::q -> prettyprint_variable a ^ ", " ^ prettyprint_args q 
 
 and prettyprint_block ast n = match ast with 
   | Unit([],[]) -> ""
