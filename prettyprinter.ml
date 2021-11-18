@@ -17,7 +17,7 @@ and prettyprint_instr ast n = match ast with
   | Print(l) -> tabs n ^ "PRINT " ^ prettyprint_print l ^ "\n"
   | Read(l) -> tabs n ^ "READ " ^ prettyprint_read l ^ "\n"
   | If(expr, i1, i2) -> prettyprint_if expr i1 i2 n
-  | While(exp, instr) -> tabs n ^ "While " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
+  | While(exp, instr) -> tabs n ^ "WHILE " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
   | Block(b) -> tabs n ^ "{\n" ^ prettyprint_block b n ^ tabs n ^ "}\n"
 
 and prettyprint_if expr i1 i2 n = match i2 with 
@@ -47,8 +47,8 @@ and prettyprint_many_variables  ast = match ast with
   | a::q -> prettyprint_variable a ^ ", " ^ prettyprint_many_variables (q)
 
 and prettyprint_variable ast = match ast with 
-  | Var(str,i) -> str
-  | Tab(id, size, tab) -> id ^ "[" ^ string_of_int size ^ "]"
+  | Var(str) -> str
+  | Tab(id, size) -> id ^ "[" ^ string_of_int size ^ "]"
 
 and prettyprint_expression ast = match ast with
   | AddExpression (l, r) -> (prettyprint_expression l) ^ " + " ^ (prettyprint_expression r)

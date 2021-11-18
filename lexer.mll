@@ -29,8 +29,10 @@ rule tokenize = parse
       { tokenize lexbuf }
 
   (* skip comments *)
-  | "//" (_ # '\n')*
+  | "//" (_ # '\n')* (* as s *)
       { tokenize lexbuf }
+(*    { COMMENT(s):: tokenize lexbuf } 
+      Tentative de sauvegarde des commentaires *)
 
   (* characters *)
   | '('

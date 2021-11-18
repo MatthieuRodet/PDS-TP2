@@ -29,3 +29,4 @@ type token =
   | DO_KW
   | OD_KW
   | TAB of string * int 
+  | COMMENT of string
