@@ -33,6 +33,7 @@ and prettyprint_instr ast n = match ast with
   | While(exp, instr) -> tabs n ^ "WHILE " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
   | Ret(exp) -> tabs n ^ "RETURN " ^ prettyprint_expression exp ^ "\n"
   | Block(b) -> tabs n ^ "{\n" ^ prettyprint_block b n ^ tabs n ^ "}\n"
+  | Call(name, l) -> tabs n ^ name ^ "(" ^ prettyprint_many_expressions l ^")\n"
 
 and prettyprint_if expr i1 i2 n = match i2 with 
   | Some(x) -> tabs n ^ "IF " ^ prettyprint_expression expr ^ " THEN\n" ^ prettyprint_instr i1 (n+1) ^ tabs n ^ "ELSE\n" ^ prettyprint_instr x (n+1) ^ tabs n ^ "FI\n" 
@@ -64,6 +65,11 @@ and prettyprint_variable ast = match ast with
   | Var(str) -> str
   | Tab(id, size) -> id ^ "[" ^ string_of_int size ^ "]"
 
+and prettyprint_many_expressions ast = match ast with 
+  |[] -> ""
+  |[a] -> prettyprint_expression a 
+  |a::q -> prettyprint_expression a ^ ", " ^ prettyprint_many_expressions q
+
 and prettyprint_expression ast = match ast with
 | AddExpression ([]) -> ""
 | AddExpression ([e]) -> prettyprint_prio1 e
@@ -86,6 +92,8 @@ and prettyprint_prio0 ast = match ast with
   | ParentheseExpression (exp) -> "(" ^ (prettyprint_expression exp) ^ ")"
   | IntegerExpression i -> string_of_int i
   | VarExpression i -> i
+  | CallFun(name, l) -> name ^ "(" ^ prettyprint_many_expressions l ^")"
+
 
 and tabs n = match n with
   | 0 -> ""
