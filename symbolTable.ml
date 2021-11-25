@@ -14,7 +14,7 @@ type uniq_ident = string
 type function_symbol = {
   return_type: ret_type;
   identifier: ident;
-  arguments: ident list;
+  arguments: params list;
   state: function_symbol_state;
 }
 
@@ -23,12 +23,6 @@ and symbol =
   | FunctionSymbol of function_symbol
 
 and symbol_table = symbol list
-
-let rec sym_tab_of_list (args : variable list) : symbol_table =
-  match args with
-  | [] -> []
-  | (Var id)::tl -> VariableSymbol(Type_Int, id, newuniqid id)::(sym_tab_of_list tl)
-  | (Tab (id, len))::tl -> failwith("TODO : tabs in sym_tab")
 
 (* Not necessarary anymore ? 
 and variable_table = Vars of variable list 

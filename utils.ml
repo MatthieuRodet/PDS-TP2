@@ -2,6 +2,7 @@ let tmp = ref 0
 let lab = ref 0
 let glob = ref 0
 let uniq_ident = ref 0
+let func = ref 0
 
 (* generate a new unique local identifier (starting with %) *)
 let newtmp: unit -> string = function () ->
@@ -22,6 +23,11 @@ let newglob str =
 let newuniqid str =
   incr uniq_ident;
   str ^ string_of_int !uniq_ident
+
+let newfun str =
+  match str with
+  | "main" -> "@" ^ str
+  | _ -> incr func; "@" ^ str ^ string_of_int !func
 
 (* transform escaped newlines ('\' 'n') into newline form suitable for LLVM
  * and append the NUL character (end of string)

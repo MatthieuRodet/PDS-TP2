@@ -8,6 +8,7 @@ open Utils
 type llvm_type =
   | LLVM_type_i32
   | LLVM_type_i32_ptr
+  | LLVM_type_void
 (* TODO: to complete *)
 
 type llvm_var = string
@@ -62,8 +63,10 @@ let (@@) ir1 ir2 = {
 let rec string_of_type = function
   | LLVM_type_i32 -> "i32"
   | LLVM_type_i32_ptr -> "i32*"
+  | LLVM_type_void -> "void"
 
 and string_of_var x = "%" ^ x
+and string_of_fun_name x = "@" ^ x
 
 and string_of_value = function
   | LLVM_i32 n -> string_of_int n
@@ -97,8 +100,14 @@ and string_of_print_args args =
 and string_of_args args =
   match args with
   | [] -> ""
-  | [var_type, id] -> string_of_type var_type ^ " " ^ string_of_var id
-  | (var_type, id)::tl -> string_of_type var_type ^ " " ^ string_of_var id ^ ", " ^ string_of_args tl
+  | [id] -> "i32 " ^  string_of_value id 
+  | id::tl -> "i32 " ^ string_of_value id ^ ", " ^ string_of_args tl
+
+and string_of_header_args args =
+  match args with
+  | [] -> ""
+  | [var_type, id] -> string_of_type var_type ^ " " ^ string_of_var id 
+  | (var_type, id)::tl -> string_of_type var_type ^ " " ^ string_of_var id ^ ", " ^ string_of_header_args tl
 
 and string_of_instr i = i
 
@@ -144,11 +153,12 @@ let llvm_jump ~(jump_label : llvm_label) : llvm_instr =
   "br label %" ^ jump_label ^ "\n"
 let llvm_ret ~(ret_val : llvm_value) : llvm_instr =
   "ret i32 " ^ string_of_value ret_val ^ "\n"
-let llvm_call ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
-  "call void " ^ string_of_var id ^  "(" ^ string_of_args args ^ ") noreturn\n"
-let llvm_call ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
-  "call i32 " ^ string_of_var id ^  "(" ^ string_of_args args ^ ") noreturn\n"
-
+let llvm_call ~(id : llvm_var) ~(args : llvm_value list) : llvm_instr =
+  "call void " ^ string_of_fun_name id ^  "(" ^ string_of_args args ^ ") noreturn\n"
+let llvm_call_expr ~(out : llvm_var) ~(id : llvm_var) ~(args : llvm_value list) : llvm_instr =
+  "%" ^ out ^ " = call i32 " ^ string_of_fun_name id ^  "(" ^ string_of_args args ^ ")\n"
+let llvm_fun_header ~(ret_type : llvm_type) ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
+  "define " ^ string_of_type ret_type ^ " " ^ string_of_fun_name id ^ "(" ^ string_of_header_args args ^ ") {\n"
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
 
