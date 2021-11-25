@@ -1,4 +1,5 @@
 // Without any assumption. 
+FUNC VOID main()
 {
     INT a
 }

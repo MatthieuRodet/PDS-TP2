@@ -1,4 +1,5 @@
 // Assuming that test_unit_tab_decl pass. 
+FUNC VOID main()
 {
     INT a[4]
     

@@ -31,6 +31,7 @@ and item =
 and declar =
   | Declaration of variable list
 
+
 and instruction = 
   | Affect of variable * expression 
   | Print of item list 
@@ -38,6 +39,7 @@ and instruction =
   | If of expression * instruction * instruction option
   | While of expression * instruction 
   | Block of block
+  | Ret of expression 
 
 and block =
   | Unit of declar list * instruction list
@@ -45,6 +47,7 @@ and block =
 and ret_type = 
   |T_Int 
   |T_Void
+
 
 and func = 
   |Proto of ret_type*ident*(variable list) 

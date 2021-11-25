@@ -72,6 +72,7 @@ and instruction = parser
   | [< 'READ_KW ; var = list1 variable comma >] -> Read(var)  
   | [< 'IF_KW ; expr = expression ; 'THEN_KW ; instr = instruction ; _ = (opt else_parser) ;  instr2 = (opt instruction)  ; 'FI_KW >] -> If(expr, instr, instr2)
   | [< 'WHILE_KW ; expr = expression ; 'DO_KW ;  instr = instruction ; 'OD_KW >] -> While(expr, instr) 
+  | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
   | [< content = block>] -> Block(content)
 
 

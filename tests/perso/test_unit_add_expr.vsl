@@ -1,4 +1,5 @@
 // Assuming that test_unit_int_decl test_unit_affectation test_unit_int_expr pass. 
+FUNC VOID main()
 {
     INT a
     

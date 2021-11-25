@@ -31,6 +31,7 @@ and prettyprint_instr ast n = match ast with
   | Read(l) -> tabs n ^ "READ " ^ prettyprint_read l ^ "\n"
   | If(expr, i1, i2) -> prettyprint_if expr i1 i2 n
   | While(exp, instr) -> tabs n ^ "WHILE " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
+  | Ret(exp) -> tabs n ^ "RETURN " ^ prettyprint_expression exp ^ "\n"
   | Block(b) -> tabs n ^ "{\n" ^ prettyprint_block b n ^ tabs n ^ "}\n"
 
 and prettyprint_if expr i1 i2 n = match i2 with 
