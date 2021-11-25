@@ -64,10 +64,24 @@ and prettyprint_variable ast = match ast with
   | Tab(id, size) -> id ^ "[" ^ string_of_int size ^ "]"
 
 and prettyprint_expression ast = match ast with
-  | AddExpression (l, r) -> (prettyprint_expression l) ^ " + " ^ (prettyprint_expression r)
-  | MinusExpression (l, r) -> (prettyprint_expression l) ^ " - " ^ (prettyprint_expression r)
-  | MulExpression (l, r) -> (prettyprint_expression l) ^ " * " ^ (prettyprint_expression r)
-  | DivExpression (l, r) -> (prettyprint_expression l) ^ " / " ^ (prettyprint_expression r)
+| AddExpression ([]) -> ""
+| AddExpression ([e]) -> prettyprint_prio1 e
+| AddExpression (e1::e2) -> prettyprint_prio1 e1 ^ " + " ^ prettyprint_expression (AddExpression e2)
+| MinusExpression ([]) -> ""
+| MinusExpression ([e]) -> prettyprint_prio1 e
+| MinusExpression (e1::e2) -> prettyprint_prio1 e1 ^ " + " ^ prettyprint_expression (MinusExpression e2)
+| Unit1(e) -> prettyprint_prio1 e
+
+and prettyprint_prio1 ast = match ast with
+| MulExpression ([]) -> ""
+| MulExpression ([e]) -> prettyprint_prio0 e
+| MulExpression (e1::e2) -> prettyprint_prio0 e1 ^ " + " ^ prettyprint_prio1 (MulExpression e2)
+| DivExpression ([]) -> ""
+| DivExpression ([e]) -> prettyprint_prio0 e
+| DivExpression (e1::e2) -> prettyprint_prio0 e1 ^ " + " ^ prettyprint_prio1 (DivExpression e2)
+| Unit0(e) -> prettyprint_prio0 e
+
+and prettyprint_prio0 ast = match ast with
   | ParentheseExpression (exp) -> "(" ^ (prettyprint_expression exp) ^ ")"
   | IntegerExpression i -> string_of_int i
   | VarExpression i -> i
