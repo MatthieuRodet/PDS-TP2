@@ -1,0 +1,11 @@
+
+FUNC VOID naivesort(a,b, t[])
+{
+    PRINT "oui"
+}
+
+FUNC VOID main()
+{
+    INT a[4]
+    a[2] := 3
+}

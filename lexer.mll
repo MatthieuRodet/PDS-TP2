@@ -53,6 +53,10 @@ rule tokenize = parse
       { LB        :: tokenize lexbuf }
   | '}' 
       { RB        :: tokenize lexbuf }
+  | '['
+      { LC  :: tokenize lexbuf }
+  | ']'
+      { RC :: tokenize lexbuf }
   | ',' 
       { COM       :: tokenize lexbuf }
   | ":=" 
@@ -88,8 +92,8 @@ rule tokenize = parse
   (* TODO : other keywords *)
 
   (* other tokens (no conflict with keywords in VSL) *)
-  | (letter (letterMaj | digit)* as lxm)  '[' (digit* as s) ']'
-      { TAB (lxm, (int_of_string s)) :: tokenize lexbuf } 
+  (*| (letter (letterMaj | digit)* as lxm)  '[' (digit* as s) ']'
+      { TAB (lxm, (int_of_string s)) :: tokenize lexbuf } *)
 
   | letter (letterMaj | digit)* as lxm
       { IDENT lxm                    :: tokenize lexbuf }
