@@ -94,6 +94,12 @@ and string_of_print_args args =
   | [] -> ""
   | a::q -> ", i32 " ^ string_of_value a ^ string_of_print_args q
 
+and string_of_args args =
+  match args with
+  | [] -> ""
+  | [var_type, id] -> string_of_type var_type ^ " " ^ string_of_var id
+  | (var_type, id)::tl -> string_of_type var_type ^ " " ^ string_of_var id ^ ", " ^ string_of_args tl
+
 and string_of_instr i = i
 
 			  
@@ -138,6 +144,10 @@ let llvm_jump ~(jump_label : llvm_label) : llvm_instr =
   "br label %" ^ jump_label ^ "\n"
 let llvm_ret ~(ret_val : llvm_value) : llvm_instr =
   "ret i32 " ^ string_of_value ret_val ^ "\n"
+let llvm_call ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
+  "call void " ^ string_of_var id ^  "(" ^ string_of_args args ^ ") noreturn\n"
+let llvm_call ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
+  "call i32 " ^ string_of_var id ^  "(" ^ string_of_args args ^ ") noreturn\n"
 
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
