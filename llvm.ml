@@ -136,6 +136,8 @@ let llvm_cmp ~(out : llvm_var) ~(cond : llvm_value) : llvm_instr =
   string_of_var out ^ " = icmp ne i32 " ^ string_of_value cond ^ ", 0\n"
 let llvm_jump ~(jump_label : llvm_label) : llvm_instr =
   "br label %" ^ jump_label ^ "\n"
+let llvm_ret ~(ret_val : llvm_value) : llvm_instr =
+  "ret i32 " ^ string_of_value ret_val ^ "\n"
 
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"

@@ -12,7 +12,7 @@ type function_symbol_state = Defined | Declared
 type uniq_ident = string
 
 type function_symbol = {
-  return_type: typ;
+  return_type: ret_type;
   identifier: ident;
   arguments: symbol_table;
   state: function_symbol_state;

@@ -18,11 +18,11 @@ let rec ir_of_ast (prog : program) : llvm_ir =
 
 and ir_of_prog (prog :  program) (sym_tab : symbol_table): llvm_ir * symbol_table = match prog with 
   |Prog([]) ->  empty_ir, []
-  |Prog(a::q) -> let ir, decl = ir_of_fun a sym_tab in let ir2, decl2 = ir_of_prog (Prog q) decl::sym_tab in ir @@ ir2, decl::decl2
+  |Prog(a::q) -> let ir, decl = ir_of_fun a sym_tab in let ir2, decl2 = ir_of_prog (Prog q) ((FunctionSymbol decl)::sym_tab) in ir @@ ir2, (FunctionSymbol decl)::decl2
 
 and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * function_symbol = match f with
   |Proto(ret, id, args) -> empty_ir, {return_type=ret; identifier=id; arguments=sym_tab_of_list args; state=Declared}
-  |Func(ret, id, args, body) -> ir_of_instruction body, {return_type=ret; identifier=id; arguments=sym_tab_of_list args; state=Defined}
+  |Func(ret, id, args, body) -> let arg_sym_tab = sym_tab_of_list args in ir_of_instruction body (arg_sym_tab @ sym_tab), {return_type=ret; identifier=id; arguments=arg_sym_tab; state=Defined}
 
 and ir_of_instructions ( l : instruction list) (sym_tab : symbol_table) : llvm_ir = match l with 
   |[] -> empty_ir
@@ -40,6 +40,7 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |If(e,i,io) -> ir_of_if e i io sym_tab
   |While(e,i) -> ir_of_while e i sym_tab
   |Block(b) -> ir_of_block b sym_tab
+  |Ret(e) -> let ir, ret_val = ir_of_expression e sym_tab in ir @: llvm_ret ret_val
 
 and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table): llvm_instr =
   match uniq_id_of_symbol_table sym_tab var with
@@ -170,10 +171,22 @@ and ir_of_exp_prio_1 (e : expPrio1) (sym_tab : symbol_table) : llvm_ir * llvm_va
     | Unit0(e) -> ir_of_exp_prio_0 e sym_tab 
 
 and ir_of_exp_prio_0 (e : expPrio0) (sym_tab : symbol_table) : llvm_ir * llvm_value = match e with
-  | IntegerExpression i -> empty_ir, LLVM_i32 i
+  |IntegerExpression i -> empty_ir, LLVM_i32 i
   |ParentheseExpression e -> ir_of_expression e sym_tab
   |VarExpression e ->
     match uniq_id_of_symbol_table sym_tab e with
     | None -> failwith ("Error : unknown symbol " ^ e)
     | Some(id) -> let out = newtmp() in
                   empty_ir @: (llvm_var_expr out id), LLVM_var out
+  |CallFun(id, params) -> ir_of_call_expr id params sym_tab
+
+and ir_of_call_expr (id : ident) (args : expression list) (sym_tab : symbol_table) : llvm_ir * llvm_value = 
+  let rec compute_args (args : expression list) (sym_tab : symbol_table) : llvm_ir * (llvm_value list) =
+    match args with
+    | [] -> empty_ir, []
+    | hd::tl -> let ir, arg_value = ir_of_expression hd sym_tab in 
+                let ir2, args_values = compute_args tl sym_tab in
+                ir @@ ir2, arg_value::args_values
+  in let ir, args_values = compute_args args sym_tab in
+  let fun_dest = newtmp() in
+  ir @: (llvm_call fun_dest id args_values), LLVM_var fun_dest
