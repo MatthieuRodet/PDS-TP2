@@ -8,7 +8,7 @@ open SymbolTable
 (* main function. returns only a string: the generated code *)
 let rec ir_of_ast (prog : program) : llvm_ir = 
   (*let ir, v = ir_of_prog prog in*)
-  let ir = ir_of_prog prog in 
+  let ir, sym_tab = ir_of_prog prog [] in 
   let v = LLVM_i32(0) in 
   (* adds the return instruction *)
   let ir = ir @: llvm_return ~ret_type:LLVM_type_i32 ~ret_value:v in
@@ -16,13 +16,13 @@ let rec ir_of_ast (prog : program) : llvm_ir =
   let ir = llvm_define_main ir in
   ir
 
-and ir_of_prog (prog :  program): llvm_ir = match prog with 
-  |Prog([]) ->  empty_ir
-  |Prog([a]) -> ir_of_block a []
-  |Prog(a::q) -> ir_of_block a [] @@ ir_of_prog (Prog q)
+and ir_of_prog (prog :  program) (sym_tab : symbol_table): llvm_ir * symbol_table = match prog with 
+  |Prog([]) ->  empty_ir, []
+  |Prog(a::q) -> let ir, decl = ir_of_fun a sym_tab in let ir2, decl2 = ir_of_prog (Prog q) decl::sym_tab in ir @@ ir2, decl::decl2
 
-and ir_of_block (b : block) (sym_tab : symbol_table): llvm_ir = match b with 
-  |Unit(declar, instr) -> let ir, st = ir_of_declaration declar sym_tab in ir @@ ir_of_instructions instr st
+and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * function_symbol = match f with
+  |Proto(ret, id, args) -> empty_ir, {return_type=ret; identifier=id; arguments=sym_tab_of_list args; state=Declared}
+  |Func(ret, id, args, body) -> ir_of_instruction body, {return_type=ret; identifier=id; arguments=sym_tab_of_list args; state=Defined}
 
 and ir_of_instructions ( l : instruction list) (sym_tab : symbol_table) : llvm_ir = match l with 
   |[] -> empty_ir
@@ -118,6 +118,9 @@ and aux0_declaration (dec : declar ) (sym_tab : symbol_table): llvm_instr_seq * 
                         let next, st2 = aux0_declaration (Declaration q) st in
                         Concat(Atom instr, next), st2
 
+and ir_of_block (b : block) (sym_tab : symbol_table): llvm_ir = match b with 
+  |Unit(declar, instr) -> let ir, st = ir_of_declaration declar sym_tab in ir @@ ir_of_instructions instr st
+                      
 and aux_declaration (var : variable ) (sym_tab : symbol_table) : llvm_instr * symbol_table = match var with 
   |Var(id) -> let un_id = newuniqid id in
               let ir = llvm_declar_var_int ~res_var:un_id ~res_type:LLVM_type_i32 in 
