@@ -20,6 +20,7 @@ and expPrio0 =
   | ParentheseExpression of expression
   | IntegerExpression of int
   | VarExpression of ident
+  | CallFun of ident* (expression list) 
 
 and typ =
   | Type_Int
@@ -40,6 +41,7 @@ and instruction =
   | While of expression * instruction 
   | Block of block
   | Ret of expression 
+  | Call of ident* (expression list) 
 
 and block =
   | Unit of declar list * instruction list

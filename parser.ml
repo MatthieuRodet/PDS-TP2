@@ -28,6 +28,7 @@ let list0 p sep = parser
   | [<>] -> []
 
 
+
 (* TODO : change when you extend the language *)
 let rec program =  parser
   | [< e =  many func ; _ = Stream.empty ?? "unexpected input at the end" >] -> Prog(e)
@@ -73,6 +74,7 @@ and instruction = parser
   | [< 'IF_KW ; expr = expression ; 'THEN_KW ; instr = instruction ; _ = (opt else_parser) ;  instr2 = (opt instruction)  ; 'FI_KW >] -> If(expr, instr, instr2)
   | [< 'WHILE_KW ; expr = expression ; 'DO_KW ;  instr = instruction ; 'OD_KW >] -> While(expr, instr) 
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
+  | [< 'IDENT name ; 'LP ; params = (list0 expression comma)  ; 'RP >] -> Call(name, params)
   | [< content = block>] -> Block(content)
 
 
@@ -95,7 +97,13 @@ and parsePrio1_aux e1 = parser
 and parsePrio0 = parser
   | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
   | [< 'INTEGER x >] -> IntegerExpression x
-  | [< 'IDENT x>] -> VarExpression x
+  | [< 'IDENT x;  is_fun = parse_call_fun >] -> match is_fun with 
+            | None ->  VarExpression x
+            | Some(params) -> CallFun(x, params)
+
+and parse_call_fun = parser 
+  |[<'LP ; params = (list0 expression comma)  ; 'RP >] -> Some(params)
+  |[<>] -> None
 
 and plus = parser
   | [< 'PLUS >] -> ()
