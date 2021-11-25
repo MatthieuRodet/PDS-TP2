@@ -15,8 +15,12 @@ and prettyprint_type t = match t with
 
 and prettyprint_args v = match v with 
   |[] -> ""
-  |[a] -> prettyprint_variable a 
-  |a::q -> prettyprint_variable a ^ ", " ^ prettyprint_args q 
+  |[a] -> prettyprint_params a 
+  |a::q -> prettyprint_params a ^ ", " ^ prettyprint_args q 
+
+and prettyprint_params a = match a with 
+  |Var_params(id) -> id 
+  |Tab_params(id) -> id ^ "[" ^ "]"
 
 and prettyprint_block ast n = match ast with 
   | Unit([],[]) -> ""
@@ -63,7 +67,7 @@ and prettyprint_many_variables  ast = match ast with
 
 and prettyprint_variable ast = match ast with 
   | Var(str) -> str
-  | Tab(id, size) -> id ^ "[" ^ string_of_int size ^ "]"
+  | Tab(id, size) -> id ^ "[" ^ prettyprint_expression size ^ "]"
 
 and prettyprint_many_expressions ast = match ast with 
   |[] -> ""
@@ -93,6 +97,7 @@ and prettyprint_prio0 ast = match ast with
   | IntegerExpression i -> string_of_int i
   | VarExpression i -> i
   | CallFun(name, l) -> name ^ "(" ^ prettyprint_many_expressions l ^")"
+  | TabExpression(id, e) -> id ^ "[" ^ prettyprint_expression e ^ "]" 
 
 
 and tabs n = match n with

@@ -2,9 +2,14 @@
 
 type ident = string
 
+
 and variable =
   | Var of ident
-  | Tab of ident * int
+  | Tab of ident * expression 
+
+and params = 
+  | Var_params of ident
+  | Tab_params of ident
 
 and expression =
   | AddExpression of expPrio1 list
@@ -20,7 +25,9 @@ and expPrio0 =
   | ParentheseExpression of expression
   | IntegerExpression of int
   | VarExpression of ident
-  | CallFun of ident* (expression list) 
+  | CallFun of ident* (expression list)
+  | TabExpression of ident*expression 
+
 
 and typ =
   | Type_Int
@@ -52,8 +59,8 @@ and ret_type =
 
 
 and func = 
-  |Proto of ret_type*ident*(variable list) 
-  |Func of ret_type*ident*(variable list)*instruction
+  |Proto of ret_type*ident*(params list) 
+  |Func of ret_type*ident*(params list)*instruction
 
 and program = 
   |Prog of func list

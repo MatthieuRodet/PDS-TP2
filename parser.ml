@@ -38,7 +38,14 @@ and func = parser
   | [< 'FUNC_KW ;  content = function_block >] -> content
 
 and declar_function = parser 
-   [< ret_type = parse_type ; name = parse_name ; 'LP ; variables = list0 (variable) (comma)  ; 'RP >] -> ret_type, name, variables
+   [< ret_type = parse_type ; name = parse_name ; 'LP ; args = list0 (parse_params) (comma)  ; 'RP >] -> ret_type, name, args
+
+and parse_params = parser 
+  |[<  'IDENT id ; is_tab = parse_params_aux id >] -> is_tab
+
+and parse_params_aux id = parser 
+  |[< 'LC ; 'RC >] -> Tab_params(id)
+  |[<>] -> Var_params(id)
 
 and parse_type = parser 
   |[< 'INT_KW >] -> T_Int
@@ -51,30 +58,37 @@ and proto = parser
   | [< ret_type,  name , variables = declar_function >] -> Proto(ret_type, name, variables)
 
 and function_block = parser
-  | [< ret_type , name ,variables = declar_function ; instr = instruction >] -> Func(ret_type, name, variables, instr)
+  | [< ret_type , name , args = declar_function ; instr = instruction >] -> Func(ret_type, name, args, instr)
 
 and block = parser 
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)
 
 and declar = parser  
-  |[< 'INT_KW ; content =  list1 (variable) (comma) >] -> Declaration(content)
+  |[< 'INT_KW ; content = (list1 variable_parser comma) >] -> Declaration(content)
 
-and variable = parser 
-  |[< 'IDENT content  >] -> Var(content)
-  |[< 'TAB (id,size) >] -> Tab(id, size)
+and variable_parser = parser 
+  |[< 'IDENT id ; vrbls = (variable_aux id)>] -> vrbls
+
+and variable_aux id = parser 
+  |[< 'LC ; size = expression; 'RC >] -> Tab(id, size)
+  |[<>] -> Var(id)
 
 and item = parser 
   |[< 'TEXT s >] -> Str(s) 
   |[< content = expression >] -> Expr(content)
 
+
+and instruction_aux id = parser 
+  |[< 'LP; params = (list0 expression comma) ; 'RP >] -> Call(id, params)
+  |[< vrbls = (variable_aux id) ; 'ASSIGN ; expr = expression >] -> Affect(vrbls, expr)
+
 and instruction = parser 
-  | [< var = variable ; 'ASSIGN ; expr = expression >] -> Affect(var, expr) 
+  | [< 'IDENT name ; content = instruction_aux name >] -> content
   | [<'PRINT_KW ; items =  list1 item comma >] -> Print(items)
-  | [< 'READ_KW ; var = list1 variable comma >] -> Read(var)  
+  | [< 'READ_KW ; var = list1 variable_parser comma >] -> Read(var)  
   | [< 'IF_KW ; expr = expression ; 'THEN_KW ; instr = instruction ; _ = (opt else_parser) ;  instr2 = (opt instruction)  ; 'FI_KW >] -> If(expr, instr, instr2)
   | [< 'WHILE_KW ; expr = expression ; 'DO_KW ;  instr = instruction ; 'OD_KW >] -> While(expr, instr) 
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
-  | [< 'IDENT name ; 'LP ; params = (list0 expression comma)  ; 'RP >] -> Call(name, params)
   | [< content = block>] -> Block(content)
 
 
@@ -97,13 +111,12 @@ and parsePrio1_aux e1 = parser
 and parsePrio0 = parser
   | [< 'LP ; e = expression ; 'RP >] -> ParentheseExpression e 
   | [< 'INTEGER x >] -> IntegerExpression x
-  | [< 'IDENT x;  is_fun = parse_call_fun >] -> match is_fun with 
-            | None ->  VarExpression x
-            | Some(params) -> CallFun(x, params)
+  | [< 'IDENT x;  is_fun = parse_call_fun x >] -> is_fun
 
-and parse_call_fun = parser 
-  |[<'LP ; params = (list0 expression comma)  ; 'RP >] -> Some(params)
-  |[<>] -> None
+and parse_call_fun  id = parser 
+  |[<'LP ; params = (list0 expression comma)  ; 'RP >] -> CallFun(id, params)
+  |[<'LC ; expr = expression ; 'RC >] -> TabExpression(id, expr)
+  |[<>] -> VarExpression(id)
 
 and plus = parser
   | [< 'PLUS >] -> ()
