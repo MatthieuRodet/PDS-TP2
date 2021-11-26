@@ -53,4 +53,4 @@ Il est également possible de lancer l'ensemble des tests unitaires du fichier `
 
 De même, `make tests_level1`, `make tests_level2`, `make tests_level3`, `make tests_level4` et  `make tests_error` lancent respectivement les tests dans les dossiers `tests/testlevel1/`, `tests/testlevel2/`, `tests/testlevel3/`, `tests/testlevel4/`, `tests/testlevelerror/`.
 
-Enfin, `make test` lance l'ensemble des tests précédemment décrits.
+Enfin, `make tests` lance l'ensemble des tests précédemment décrits.
