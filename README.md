@@ -13,20 +13,25 @@ et la
 
 Notre compilateur traite actuellement :
 
-* Les expressions simples (entiers, additions, soustractions, multiplications, divisions, parenthèses)
+* Les expressions simples (entiers, additions, soustractions, multiplications, divisions, parenthèses) et la priorité des opérateurs
 * Les instructions d'affectations entières
 * La gestion des blocs
 * Les déclarations de variables (entiers et tableaux d'entiers)
 * Les expressions avec variables
 * Les instructions de contrôle (While et If)
 * Les fonctions de la bibliothèque (READ et PRINT)
+* Les définitions et appels de fonction (sans le passage de tableaux en paramètre)
+* La gestions des tableaux (expression, affectation et lecture)
+* Un Pretty-Printer
 
 Il nous reste à étendre et améliorer notre compilateur sur les points suivants :
 
-* Gestion de la priorité des opérateurs
-* Les définitions et appels de fonction
-* La gestions des tableaux (expression, affectation et lecture)
-* Étendre le Pretty-Printer à toutes les extensions ajoutées
+* Le passage de tableaux en paramètre
+
+Nous allons également nous pencher sur les extensions suivantes :
+
+* Multi-threading d'un processus
+* Application du Map and Reduce (<https://fr.wikipedia.org/wiki/MapReduce>)
 
 ## Construction d'un programme
 

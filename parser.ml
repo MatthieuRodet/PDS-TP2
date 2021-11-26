@@ -64,7 +64,14 @@ and block = parser
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)
 
 and declar = parser  
-  |[< 'INT_KW ; content = (list1 variable_parser comma) >] -> Declaration(content)
+  |[< 'INT_KW ; content = (list1 declar_var comma) >] -> Declaration(content)
+
+and declar_var = parser 
+  |[< 'IDENT id ; vrbls = (declar_var_aux id) >] -> vrbls
+  
+and declar_var_aux id = parser  
+|[< 'LC ; 'INTEGER x; 'RC >] -> DTab(id, x)
+|[<>] -> DVar(id)
 
 and variable_parser = parser 
   |[< 'IDENT id ; vrbls = (variable_aux id)>] -> vrbls

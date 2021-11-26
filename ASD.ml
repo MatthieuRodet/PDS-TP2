@@ -6,6 +6,9 @@ type ident = string
 and variable =
   | Var of ident
   | Tab of ident * expression 
+and decl_variable =
+    | DVar of ident
+    | DTab of ident * int 
 
 and params = 
   | Var_params of ident
@@ -31,14 +34,14 @@ and expPrio0 =
 
 and typ =
   | Type_Int
-  | Type_Tab
+  | Type_Tab of int
 
 and item =
   | Expr of expression
   | Str of string 
 
 and declar =
-  | Declaration of variable list
+  | Declaration of decl_variable list
 
 
 and instruction = 

@@ -132,10 +132,12 @@ let llvm_return ~(ret_type : llvm_type) ~(ret_value : llvm_value) : llvm_instr =
 let llvm_declar_var_int ~(res_var : llvm_var) ~(res_type : llvm_type) : llvm_instr = 
   string_of_var res_var ^ " = alloca " ^ string_of_type res_type ^ "\n" 
 
-let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : llvm_value) ~(res_type : llvm_type) : llvm_instr = 
-  string_of_var res_tab ^ " = alloca [" ^ string_of_value res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
+let llvm_declar_var_tab ~(res_tab : llvm_var) ~(res_size : int) ~(res_type : llvm_type) : llvm_instr = 
+  string_of_var res_tab ^ " = alloca [" ^ string_of_int res_size ^ " x " ^ string_of_type res_type ^ " ]\n"
 let llvm_var_expr ~(dest : llvm_var) ~(var : llvm_var) : llvm_instr =
   string_of_var dest ^ " = load i32, i32* " ^ string_of_var var ^ "\n"
+let llvm_tab_expr ~(dest : llvm_var) ~(tab : llvm_var) ~(index : llvm_value) ~(size : int) : llvm_instr =
+  string_of_var dest ^ " = getelementptr [" ^ string_of_int size ^ " x i32], [" ^ string_of_int size ^ " x i32]* " ^ string_of_var tab ^ ", i64 0, i32 " ^ string_of_value index ^ "\n"
 let llvm_affect_var ~(res_var : llvm_value) ~(val_var : llvm_var) : llvm_instr =
   "store i32 " ^ string_of_value res_var ^ ", i32* " ^ string_of_var val_var ^ "\n"
   (* defining the 'main' function with ir.body as function body *)

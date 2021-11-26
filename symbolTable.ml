@@ -53,7 +53,7 @@ let uniq_id_of_symbol_table tab id =
   match lookup tab id with
   | None -> None
   | Some(FunctionSymbol(_)) -> None
-  | Some(VariableSymbol(_, id, uniq_id)) -> Some uniq_id
+  | Some(VariableSymbol(typ, id, uniq_id)) -> Some(typ,uniq_id)
 
 let add tab sym = sym :: tab
 
