@@ -58,7 +58,16 @@ and prettyprint_read a = match a with
 
 and prettyprint_declar ast n = match ast with 
   | Declaration([]) -> ""
-  | Declaration(l) -> tabs n ^ "INT " ^ prettyprint_many_variables l ^ "\n"
+  | Declaration(l) -> tabs n ^ "INT " ^ prettyprint_many_decl_variables l ^ "\n"
+
+and prettyprint_many_decl_variables  ast = match ast with 
+  | [] -> ""
+  | [a] -> prettyprint_decl_variable a
+  | a::q -> prettyprint_decl_variable a ^ ", " ^ prettyprint_many_decl_variables (q)
+
+and prettyprint_decl_variable ast = match ast with 
+  | DVar(str) -> str
+  | DTab(id, size) -> id ^ "[" ^ string_of_int size ^ "]"
 
 and prettyprint_many_variables  ast = match ast with 
   | [] -> ""

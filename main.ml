@@ -12,7 +12,7 @@ let _ =
 
     (* Pretty-print input *)
     (*print_string("Appel du prettyprinter : \n") ;
-    print_endline (Prettyprinter.prettyprint ast)*)
+    print_endline (Prettyprinter.prettyprint ast);*)
 
     (* Print LLVM IR *)
     let ir = Codegen.ir_of_ast ast in

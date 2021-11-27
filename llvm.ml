@@ -77,7 +77,7 @@ and string_of_ir ir =
    * and declare the external function printf
    *)
   "; Target\n"
-  ^ "target triple = \"x86_64-unknown-linux-gnu\"\n"
+  ^ "target triple = \"x86_64-pc-linux-gnu\"\n"
   ^ "; External declaration of the printf function\n"
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
