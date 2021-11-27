@@ -35,6 +35,7 @@ and expPrio0 =
 and typ =
   | Type_Int
   | Type_Tab of int
+  | Type_Tab_Ptr
 
 and item =
   | Expr of expression

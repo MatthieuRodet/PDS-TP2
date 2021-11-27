@@ -38,12 +38,8 @@ and sym_tab_of_args (args : params list) (sym_tab : symbol_table) : llvm_ir * sy
   | (Var_params id)::tl -> let uniqid = newuniqid id in
                            let ir, st = sym_tab_of_args tl sym_tab in 
                            (ir @: llvm_declar_var_int uniqid LLVM_type_i32) @: llvm_affect_var (LLVM_var id) uniqid, VariableSymbol(Type_Int, id, uniqid)::st
-  | (Tab_params id)::tl -> failwith("TODO : tabs in args")
-                           (*let uniqid = newuniqid id in
-                           let ir, st = sym_tab_of_args tl sym_tab in
-                           let ptr_instr, ptr = instr_to_get_ptr id (LLVM_i32 0) sym_tab in
-                           (ir @: llvm_declar_var_tab )*)
-  (*VariableSymbol(Type_Tab, id, id)::(sym_tab_of_list tl)*)
+  | (Tab_params id)::tl -> let ir, st = sym_tab_of_args tl sym_tab in
+                           ir, VariableSymbol(Type_Tab_Ptr, id, id)::st
 
 and ir_of_main (body : instruction) (sym_tab : symbol_table) : llvm_ir =
   let ir = ir_of_instruction body sym_tab in
@@ -82,8 +78,9 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
 and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table): llvm_instr =
   match uniq_id_of_symbol_table sym_tab var with
   | None -> failwith ("Error : unknown var symbol " ^ var)
-  | Some(Type_Tab _, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol")
-  | Some(typ, uniq_id) -> llvm_affect_var value uniq_id
+  | Some(Type_Tab _, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol1")
+  | Some(Type_Tab_Ptr, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol2")
+  | Some(Type_Int, uniq_id) -> llvm_affect_var value uniq_id
 
 and ir_of_print (a : item list) (sym_tab : symbol_table) : llvm_ir = 
     let rec aux_print (a : item list) (ir : llvm_ir) (to_print : string) (args : llvm_value list): llvm_ir * string * llvm_value list =
@@ -102,16 +99,17 @@ and ir_of_print (a : item list) (sym_tab : symbol_table) : llvm_ir =
 and ir_of_read (a : variable) (sym_tab : symbol_table) : llvm_ir = match a with
     | Var(ident) -> (match uniq_id_of_symbol_table sym_tab ident with
                     | None -> failwith ("Error : unknown var symbol " ^ ident)
-                    | Some(Type_Tab _, id) -> failwith ("Error : tab symbol " ^ ident ^ " used as var symbol")
+                    | Some(Type_Tab _, id) -> failwith ("Error : tab symbol " ^ ident ^ " used as var symbol3")
+                    | Some(Type_Tab_Ptr, id) -> failwith ("Error : tab symbol " ^ ident ^ " used as var symbol4")
                     | Some(Type_Int, id) -> (empty_ir @: llvm_read id))
     | Tab(ident, index) -> (match uniq_id_of_symbol_table sym_tab ident with
                     | None -> failwith ("Error : unknown var symbol " ^ ident)
-                    | Some(Type_Int, id) -> failwith ("Error : tab symbol " ^ ident ^ " used as var symbol")
-                    | Some(Type_Tab _, id) ->
+                    | Some(Type_Int, id) -> failwith ("Error : tab symbol " ^ ident ^ " used as var symbol5")
+                    | Some(_, id) ->
                               let ir, index_value = ir_of_expression index sym_tab in
                               let ptr_instr, ptr = instr_to_get_ptr ident index_value sym_tab in
                               (ir @: ptr_instr) @: llvm_read ptr
-    )
+                    )
 and ir_of_if e i io sym_tab : llvm_ir = match io with
     | None -> let ir_e, out = ir_of_expression e sym_tab in
               let out_cond = newtmp() in
@@ -168,12 +166,20 @@ and ir_of_block (b : block) (sym_tab : symbol_table): llvm_ir = match b with
   |Unit(declar, instr) -> let ir, st = ir_of_declaration declar sym_tab in ir @@ ir_of_instructions instr st
          
 and ir_of_call (id : ident) (args : expression list) (sym_tab : symbol_table) : llvm_ir =
-  let rec compute_args (args : expression list) (sym_tab : symbol_table) : llvm_ir * (llvm_value list) =
+  let rec compute_args (args : expression list) (sym_tab : symbol_table) : llvm_ir * (llvm_type * llvm_value) list =
     match args with
     | [] -> empty_ir, []
+    | (Unit1(Unit0(VarExpression id)))::tl -> (match uniq_id_of_symbol_table sym_tab id with
+                | Some(typ, un_id) when typ != Type_Int -> 
+                  let ptr_instr, out = instr_to_get_ptr id (LLVM_i32 0) sym_tab in
+                  let ir2, args_values = compute_args tl sym_tab in
+                  (empty_ir @: ptr_instr) @@ ir2, (LLVM_type_i32_ptr, (LLVM_var out))::args_values
+                | _ -> let ir, arg_value = ir_of_expression (Unit1(Unit0(VarExpression id))) sym_tab in 
+                       let ir2, args_values = compute_args tl sym_tab in
+                       ir @@ ir2, (LLVM_type_i32, arg_value)::args_values)
     | hd::tl -> let ir, arg_value = ir_of_expression hd sym_tab in 
                 let ir2, args_values = compute_args tl sym_tab in
-                ir @@ ir2, arg_value::args_values
+                ir @@ ir2, (LLVM_type_i32, arg_value)::args_values
   in let ir, args_values = compute_args args sym_tab in
   ir @: (llvm_call id args_values)
 
@@ -189,6 +195,7 @@ and aux_declaration (var : decl_variable ) (sym_tab : symbol_table) : llvm_instr
 and llvm_type_of_asd_typ : typ -> llvm_type = function
   | Type_Int -> LLVM_type_i32
   | Type_Tab(x) -> LLVM_type_i32_ptr
+  | Type_Tab_Ptr -> LLVM_type_i32_ptr
 
 (* all expressions have type LLVM_type_i32 *)
 (* they return code (llvm_ir) and expression result (llvm_value) *)
@@ -240,17 +247,26 @@ and ir_of_exp_prio_0 (e : expPrio0) (sym_tab : symbol_table) : llvm_ir * llvm_va
   |VarExpression e ->
     match uniq_id_of_symbol_table sym_tab e with
     | None -> failwith ("Error : unknown var symbol " ^ e)
-    | Some(Type_Tab _, _) -> failwith("Error : tab symbol " ^ e ^ " used as var symbol")
+    | Some(Type_Tab _, _) -> failwith("Error : tab symbol " ^ e ^ " used as var symbol6")
+    | Some(Type_Tab_Ptr, _) -> failwith("Error : tab symbol " ^ e ^ " used as var symbol7")
     | Some(typ, uniq_id) -> let out = newtmp() in
                   empty_ir @: (llvm_var_expr out uniq_id), LLVM_var out
 
 and ir_of_call_expr (id : ident) (args : expression list) (sym_tab : symbol_table) : llvm_ir * llvm_value = 
-  let rec compute_args (args : expression list) (sym_tab : symbol_table) : llvm_ir * (llvm_value list) =
+  let rec compute_args (args : expression list) (sym_tab : symbol_table) : llvm_ir * (llvm_type * llvm_value) list =
     match args with
     | [] -> empty_ir, []
+    | (Unit1(Unit0(VarExpression id)))::tl -> (match uniq_id_of_symbol_table sym_tab id with
+                | Some(Type_Tab _, un_id) -> 
+                  let ptr_instr, out = instr_to_get_ptr id (LLVM_i32 0) sym_tab in
+                  let ir2, args_values = compute_args tl sym_tab in
+                  (empty_ir @: ptr_instr) @@ ir2, (LLVM_type_i32_ptr, (LLVM_var out))::args_values
+                | _ -> let ir, arg_value = ir_of_expression (Unit1(Unit0(VarExpression id))) sym_tab in 
+                      let ir2, args_values = compute_args tl sym_tab in
+                      ir @@ ir2, (LLVM_type_i32, arg_value)::args_values)
     | hd::tl -> let ir, arg_value = ir_of_expression hd sym_tab in 
                 let ir2, args_values = compute_args tl sym_tab in
-                ir @@ ir2, arg_value::args_values
+                ir @@ ir2, (LLVM_type_i32, arg_value)::args_values
   in let ir, args_values = compute_args args sym_tab in
   let fun_dest = newtmp() in
   ir @: (llvm_call_expr fun_dest id args_values), LLVM_var fun_dest
@@ -258,6 +274,8 @@ and ir_of_call_expr (id : ident) (args : expression list) (sym_tab : symbol_tabl
 and instr_to_get_ptr tab index sym_tab : llvm_instr * llvm_var =
   match uniq_id_of_symbol_table sym_tab tab with
   | None -> failwith("Error : unknown tab symbol " ^ tab)
-  | Some(Type_Int, uniq_id) -> failwith("Error : tab symbol " ^ tab ^ " used as var symbol")
+  | Some(Type_Int, uniq_id) -> failwith("Error : tab symbol " ^ tab ^ " used as var symbol8")
   | Some(Type_Tab size, uniq_id) -> let ptr = newtmp() in
                                     llvm_tab_expr ptr uniq_id index size, ptr
+  | Some(Type_Tab_Ptr, uniq_id) -> let ptr = newtmp() in
+                                   llvm_ptr_expr ptr uniq_id index, ptr
