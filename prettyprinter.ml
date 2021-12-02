@@ -35,6 +35,8 @@ and prettyprint_instr ast n = match ast with
   | Read(l) -> tabs n ^ "READ " ^ prettyprint_read l ^ "\n"
   | Thread(id1, id2, q) -> tabs n ^ "THREAD " ^ id1 ^ ", " ^ id2 ^ ", " ^ prettyprint_many_expressions q ^ "\n"
   | Join(id1, v) -> tabs n ^ "JOIN " ^ id1 ^ ", " ^ prettyprint_variable v ^ "\n" 
+  | Map(doc, x, f, params) -> tabs n ^ "MAP " ^ prettyprint_variable doc ^ ", " ^ string_of_int(x) ^ ", " ^ f ^ ", " ^ prettyprint_many_expressions params^ "\n"
+  | Reduce(v) -> tabs n ^ "REDUCE " ^ prettyprint_variable v ^ "\n"
   | If(expr, i1, i2) -> prettyprint_if expr i1 i2 n
   | While(exp, instr) -> tabs n ^ "WHILE " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
   | Ret(exp) -> tabs n ^ "RETURN " ^ prettyprint_expression exp ^ "\n"

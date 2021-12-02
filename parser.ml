@@ -98,6 +98,8 @@ and instruction = parser
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
   | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name ; 'COM ; params = many expression >] -> Thread(id1, id2, params)
   | [< 'JOIN_KW ; id1 = parse_name ; 'COM ; v = variable_parser >] -> Join(id1, v)
+  | [< 'MAP_KW ; doc = variable_parser ; 'COM ; 'INTEGER frac ; 'COM ; 'IDENT f ; 'COM ; params = many expression >] -> Map(doc, frac, f, params)
+  | [< 'REDUCE_KW ; v = variable_parser >]  -> Reduce(v)
   | [< content = block>] -> Block(content)
 
 

@@ -1,0 +1,22 @@
+
+FUNC INT f(a, t[])
+{
+    INT cmpt, result 
+    cmpt := a
+    result := 0
+    WHILE cmpt DO {
+        result := result + t[cmpt]
+        cmpt := cmpt - 1 }
+    DONE
+    RETURN result 
+}
+
+FUNC VOID main()
+{
+    INT a, t[30]
+    a := 30
+    MAP a, 2, f, a
+    REDUCE v
+   
+    
+}
