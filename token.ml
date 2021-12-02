@@ -30,3 +30,5 @@ type token =
   | OD_KW
   | TAB of string * int 
   | COMMENT of string
+  | THREAD_KW 
+  | JOIN_KW

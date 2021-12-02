@@ -33,6 +33,8 @@ and prettyprint_instr ast n = match ast with
   | Affect(var, expr) -> tabs n ^ prettyprint_variable var ^ " := " ^ prettyprint_expression expr ^ "\n"
   | Print(l) -> tabs n ^ "PRINT " ^ prettyprint_print l ^ "\n"
   | Read(l) -> tabs n ^ "READ " ^ prettyprint_read l ^ "\n"
+  | Thread(id1, id2, q) -> tabs n ^ "THREAD " ^ id1 ^ ", " ^ id2 ^ ", " ^ prettyprint_many_expressions q ^ "\n"
+  | Join(id1, v) -> tabs n ^ "JOIN " ^ id1 ^ ", " ^ prettyprint_variable v ^ "\n" 
   | If(expr, i1, i2) -> prettyprint_if expr i1 i2 n
   | While(exp, instr) -> tabs n ^ "WHILE " ^ prettyprint_expression exp ^ " DO\n" ^ prettyprint_instr instr (n+1) ^ tabs n ^ "DONE\n"
   | Ret(exp) -> tabs n ^ "RETURN " ^ prettyprint_expression exp ^ "\n"

@@ -49,6 +49,8 @@ and instruction =
   | Affect of variable * expression 
   | Print of item list 
   | Read of variable list
+  | Thread of ident * ident * (expression list)
+  | Join of ident * variable
   | If of expression * instruction * instruction option
   | While of expression * instruction 
   | Block of block

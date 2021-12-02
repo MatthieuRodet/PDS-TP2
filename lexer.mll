@@ -87,6 +87,10 @@ rule tokenize = parse
     { DO_KW       :: tokenize lexbuf }
   | "DONE"
     { OD_KW       :: tokenize lexbuf }
+  | "THREAD" 
+    { THREAD_KW  :: tokenize lexbuf}
+  | "JOIN"
+    { JOIN_KW    :: tokenize lexbuf}
 
 
   (* TODO : other keywords *)
