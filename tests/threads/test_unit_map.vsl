@@ -16,7 +16,6 @@ FUNC VOID main()
     INT a, t[30]
     a := 30
     MAP a, 2, f, a
-    REDUCE v
    
     
 }

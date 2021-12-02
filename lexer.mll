@@ -93,8 +93,6 @@ rule tokenize = parse
     { JOIN_KW    :: tokenize lexbuf}
   | "MAP"
     { MAP_KW     :: tokenize lexbuf }
-  | "REDUCE"
-    { REDUCE_KW  :: tokenize lexbuf }
 
 
   (* TODO : other keywords *)
