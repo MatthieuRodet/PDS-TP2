@@ -135,9 +135,11 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Block(b) -> ir_of_block b sym_tab
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
-  |Thread(tid, fun_id) -> ir_of_thread tid fun_id sym_tab
-  |Join(tid, ret_var) -> failwith("TODO : join threads")
+  |Thread(tid, fun_id) -> ir_of_thread tid fun_id sym_tab, []
   |MapRed(tab, cut_count, fun_id, fun_args) -> failwith("TODO : map")
+  |Join(tid) -> match uniq_id_of_symbol_table sym_tab tid with
+        | Some(Type_Int, uniq_id) -> empty_ir @: llvm_join uniq_id, []
+        | _ -> failwith("TODO : ERROR JOIN")
 
 and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table): llvm_instr =
   match uniq_id_of_symbol_table sym_tab var with
@@ -146,11 +148,15 @@ and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table)
   | Some(Type_Tab_Ptr, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol")
   | Some(Type_Int, uniq_id) -> llvm_affect_var value uniq_id
 
-and ir_of_thread (tid : ident) (fun_id : ident) (sym_tab : symbol_table) : llvm_instr = 
+and ir_of_thread (tid : ident) (fun_id : ident) (sym_tab : symbol_table) : llvm_ir = 
   match lookup sym_tab fun_id with 
   | None -> failwith ("Error : unknow function in thread initialization ")
-  | Some(VariableSymbol(q)) -> ("Error : Variabe symbol " ^ fun_id ^ "is not callable ")
-  | Some(FunctionSymbol{arguments : [] ; _}) ->  llvm_create_thread tid fun_id 
+  | Some(VariableSymbol(_)) -> failwith("Error : Variabe symbol " ^ fun_id ^ "is not callable ")
+  | Some(FunctionSymbol({arguments = [] ; _})) ->  
+              (match uniq_id_of_symbol_table sym_tab tid with
+              | Some(Type_Int, uniq_id) -> llvm_create_thread uniq_id fun_id 
+              | _ -> failwith("TODO : ERROR")
+              )
   | _ -> failwith (" Error : wrong call of function " ^ fun_id )
 
 and ir_of_print (a : item list) (sym_tab : symbol_table) : llvm_ir * (ident list) = 

@@ -2,7 +2,7 @@
 FUNC INT f(a, t[])
 {
     INT cmpt, result 
-    cmpt := a
+    cmpt := a - 1
     result := 0
     WHILE cmpt DO {
         result := result + t[cmpt]
@@ -15,7 +15,5 @@ FUNC VOID main()
 {
     INT a, t[30]
     a := 30
-    MAP a, 2, f, a
-   
-    
+    MAP t, 2, f, a
 }

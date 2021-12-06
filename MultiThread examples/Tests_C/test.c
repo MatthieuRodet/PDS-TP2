@@ -1,11 +1,18 @@
 #include <pthread.h>
+#include <stdio.h>
 
 void *start_routine(void* args) {
     return args;
 }
 
+
+void start_routine_r() {
+    printf("Yolo\n");
+}
+
 int main() {
     pthread_t t;
-    pthread_create(&t, NULL, start_routine, NULL);
+    int a = 30;
+    pthread_create(&t, NULL, start_routine, &a);
     pthread_join(t, NULL);
 }

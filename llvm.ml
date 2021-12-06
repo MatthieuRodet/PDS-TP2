@@ -66,6 +66,7 @@ let rec string_of_type = function
   | LLVM_type_void -> "void"
 
 and string_of_var x = "%" ^ x
+and string_of_tid x = "%" ^ x ^ "_tid"
 and string_of_fun_name x = "@" ^ x
 
 and string_of_value = function
@@ -80,7 +81,18 @@ and string_of_ir ir =
   ^ "target triple = \"x86_64-pc-linux-gnu\"\n"
   ^ "; External declaration of the printf function\n"
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
-  ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n"
+  ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n\n"
+  ^ "%union.pthread_attr_t = type { i64, [48 x i8] }\n\n"
+  ^ "declare i32 @pthread_create(i64*, %union.pthread_attr_t*, i8* (i8*)*, i8*)\n\n"
+  ^ "declare i32 @pthread_join(i64, i8**)\n"
+  ^ "define i8* @start_routine(i8* %0) {
+    %tmp2 = bitcast i8* %0 to i32 (i32)*
+    %2 = call i32 %tmp2(i32 2)
+    %3 = alloca i32
+    store i32 %2, i32* %3
+    %4 = bitcast i32* %3 to i8*
+    ret i8* %4
+  }\n"
   ^ "\n; Actual code begins\n\n"
   ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
   ^ string_of_instr_seq ir.header
@@ -165,6 +177,18 @@ let llvm_fun_header ~(ret_type : llvm_type) ~(id : llvm_var) ~(args : (llvm_type
   "define " ^ string_of_type ret_type ^ " " ^ string_of_fun_name id ^ "(" ^ string_of_header_args args ^ ") {\n"
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
+
+let llvm_create_thread ~(tid : llvm_var) ~(fun_id : llvm_var) : llvm_ir =
+  let fun_ptr = newtmp() in
+  ((empty_ir
+  @: string_of_tid tid ^ " = alloca i64\n")
+  @: string_of_var fun_ptr ^ " = bitcast void ()* " ^ string_of_fun_name fun_id ^ " to i8*\n")
+  @: "call i32 @pthread_create(i64* " ^ string_of_tid tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* @start_routine, i8* " ^ string_of_var fun_ptr ^ ")\n"
+
+let llvm_join ~(tid : llvm_var) : llvm_instr =
+  let tid_tmp = newtmp() in
+  string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_tid tid ^ "\n" ^
+  "call i32 @pthread_join(i64 " ^ string_of_var tid_tmp ^ ", i8** null)\n"
 
 let llvm_define_main (ir : llvm_ir) : llvm_ir =
   { header = ir.header;

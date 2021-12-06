@@ -50,7 +50,7 @@ and instruction =
   | Print of item list 
   | Read of variable list
   | Thread of ident * ident
-  | Join of ident * variable
+  | Join of ident
   | If of expression * instruction * instruction option
   | While of expression * instruction 
   | Block of block
