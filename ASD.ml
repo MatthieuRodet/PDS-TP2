@@ -58,7 +58,6 @@ and instruction =
   | Call of ident* (expression list) 
   | MapRed of variable * int * ident * (expression list)
 
-
 and block =
   | Unit of declar list * instruction list
 

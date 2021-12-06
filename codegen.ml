@@ -18,19 +18,21 @@ let rec ir_of_ast (prog : program) : llvm_ir =
   ir
 
 and verify_proto_declaration (sym_tab : symbol_table) (called_func : ident list): unit =
-  match sym_tab with
+  match called_func with
   | [] -> ()
-  | _ -> ()
+  | id::t -> match lookup sym_tab id with 
+             | Some(FunctionSymbol({state=Declared})) -> failwith("Call of the declared but undefined function " ^ id)
+             | _ -> verify_proto_declaration sym_tab t
 
 and ir_of_prog (prog :  program) (sym_tab : symbol_table) (called_func : ident list): llvm_ir * symbol_table * (ident list) = match prog with 
-  |Prog([]) ->  empty_ir, [], called_func
+  |Prog([]) ->  empty_ir, sym_tab, called_func
   |Prog(a::q) -> let ir, decl, called = ir_of_fun a sym_tab in
-                 let ir2, decl2, called2 = ir_of_prog (Prog q) ((FunctionSymbol decl)::sym_tab) (called @ called_func) in
-                 ir @@ ir2, (FunctionSymbol decl)::decl2, called2
+                 let ir2, decl2, called2 = ir_of_prog (Prog q) decl (called @ called_func) in
+                 ir @@ ir2, decl2, called2
 
-and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * function_symbol * (ident list) = match f with
+and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * symbol_table * (ident list) = match f with
   |Proto(ret, id, args) -> (match lookup sym_tab id with
-    | None -> empty_ir, {return_type=ret; identifier=id; arguments=args; state=Declared}, []
+    | None -> empty_ir, (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Declared})::sym_tab, []
     | _ -> failwith("Error : Prototype of the already declared function " ^ id)
     )
   |Func(ret, id, args, body) -> (match lookup sym_tab id with
@@ -45,12 +47,12 @@ and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * function_symbol * 
         | T_Void -> 
           let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
           (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n",
-          {return_type=ret; identifier=id; arguments=args; state=Defined},
+          (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::(remove_proto id sym_tab),
           called
         | T_Int ->
           let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
           (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n",
-          {return_type=ret; identifier=id; arguments=args; state=Defined},
+          (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::(remove_proto id sym_tab),
           called
           )
     | Some(VariableSymbol _) -> failwith("Error : Function defined with the name of a variable : " ^ id)
@@ -60,14 +62,20 @@ and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * function_symbol * 
           | T_Void -> 
             let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
             (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n",
-            {return_type=ret; identifier=id; arguments=args; state=Defined},
+            (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::sym_tab,
             called
           | T_Int ->
             let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
             (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n",
-            {return_type=ret; identifier=id; arguments=args; state=Defined},
+            (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::sym_tab,
             called
     )
+
+and remove_proto (id : ident) (sym_tab : symbol_table) : symbol_table =
+  match sym_tab with
+  | [] -> []
+  | FunctionSymbol({identifier=id; state=Declared; _})::tl -> tl
+  | hd::tl -> hd :: (remove_proto id tl)
 
 and sym_tab_of_args (args : params list) (sym_tab : symbol_table) : llvm_ir * symbol_table =
   match args with
@@ -127,6 +135,9 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Block(b) -> ir_of_block b sym_tab
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
+  |Thread(tid, fun_id, exprs) -> failwith("TODO : threads")
+  |Join(tid, ret_var) -> failwith("TODO : join threads")
+  |MapRed(tab, cut_count, fun_id, fun_args) -> failwith("TODO : map")
 
 and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table): llvm_instr =
   match uniq_id_of_symbol_table sym_tab var with
@@ -345,7 +356,7 @@ let rec compute_args (args : expression list) (sym_tab : symbol_table) (called_f
   | Some(FunctionSymbol {arguments=args2}) -> if verify_fun_call_compatibility T_Int T_Int args args2 sym_tab then
                                                 let ir, args_values, called = compute_args args sym_tab called_func in
                                                 let fun_dest = newtmp() in
-                                                ir @: (llvm_call_expr fun_dest id args_values), LLVM_var fun_dest, called
+                                                ir @: (llvm_call_expr fun_dest id args_values), LLVM_var fun_dest, id::called
                                               else
                                                 failwith("Error : Incompatible arguments type and/or number in declaration and call of function " ^ id)  
 

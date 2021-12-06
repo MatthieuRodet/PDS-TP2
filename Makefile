@@ -15,7 +15,7 @@ tests_unit:
 	@for f in ./tests/unit/*.vsl ; do echo "Processing $$f file..\e[1;38;5;11m" ; ./compile $$f ; echo "\e[0m$$f done\n\n" ; done
 
 tests_unit_prettyprint:
-	@for f in ./tests/perso/*.vsl ; do echo "Processing $$f file..\e[1;38;5;11m" ; ./main.native < $$f ; echo "\e[0m$$f done\n\n" ; done
+	@for f in ./tests/unit/*.vsl ; do echo "Processing $$f file..\e[1;38;5;11m" ; ./main.native < $$f ; echo "\e[0m$$f done\n\n" ; done
 	
 
 tests_level1:
