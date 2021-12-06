@@ -13,4 +13,4 @@ name="`dirname $1`/`basename $1 .vsl`"
 # translating from VSL to LLVM IR (.ll)
 ./main.native < $name.vsl > $name.ll
 
-clang $name.ll -o $name -Wno-override-module
+clang $name.ll -pthread -o $name -Wno-override-module
