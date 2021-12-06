@@ -135,7 +135,7 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Block(b) -> ir_of_block b sym_tab
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
-  |Thread(tid, fun_id) -> failwith("TODO : threads")
+  |Thread(tid, fun_id) -> ir_of_thread tid fun_id sym_tab
   |Join(tid, ret_var) -> failwith("TODO : join threads")
   |MapRed(tab, cut_count, fun_id, fun_args) -> failwith("TODO : map")
 
@@ -145,6 +145,13 @@ and ir_of_affect_var (var : ident) (value : llvm_value) (sym_tab : symbol_table)
   | Some(Type_Tab _, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol")
   | Some(Type_Tab_Ptr, id) -> failwith ("Error : tab symbol " ^ var ^ " used as var symbol")
   | Some(Type_Int, uniq_id) -> llvm_affect_var value uniq_id
+
+and ir_of_thread (tid : ident) (fun_id : ident) (sym_tab : symbol_table) : llvm_instr = 
+  match lookup sym_tab fun_id with 
+  | None -> failwith ("Error : unknow function in thread initialization ")
+  | Some(VariableSymbol(q)) -> ("Error : Variabe symbol " ^ fun_id ^ "is not callable ")
+  | Some(FunctionSymbol{arguments : [] ; _}) ->  llvm_create_thread tid fun_id 
+  | _ -> failwith (" Error : wrong call of function " ^ fun_id )
 
 and ir_of_print (a : item list) (sym_tab : symbol_table) : llvm_ir * (ident list) = 
     let rec aux_print (a : item list) (ir : llvm_ir) (to_print : string) (args : llvm_value list) (called_func : ident list): llvm_ir * string * llvm_value list * ident list=
