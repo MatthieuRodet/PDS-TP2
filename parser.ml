@@ -96,7 +96,7 @@ and instruction = parser
   | [< 'IF_KW ; expr = expression ; 'THEN_KW ; instr = instruction ; _ = (opt else_parser) ;  instr2 = (opt instruction)  ; 'FI_KW >] -> If(expr, instr, instr2)
   | [< 'WHILE_KW ; expr = expression ; 'DO_KW ;  instr = instruction ; 'OD_KW >] -> While(expr, instr) 
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
-  | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name ; 'COM ; params = many expression >] -> Thread(id1, id2, params)
+  | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name >] -> Thread(id1, id2)
   | [< 'JOIN_KW ; id1 = parse_name ; 'COM ; v = variable_parser >] -> Join(id1, v)
   | [< 'MAP_KW ; doc = variable_parser ; 'COM ; 'INTEGER frac ; 'COM ; 'IDENT f ; 'COM ; params = many expression >] -> MapRed(doc, frac, f, params)
   | [< content = block>] -> Block(content)

@@ -135,7 +135,7 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Block(b) -> ir_of_block b sym_tab
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
-  |Thread(tid, fun_id, exprs) -> failwith("TODO : threads")
+  |Thread(tid, fun_id) -> failwith("TODO : threads")
   |Join(tid, ret_var) -> failwith("TODO : join threads")
   |MapRed(tab, cut_count, fun_id, fun_args) -> failwith("TODO : map")
 
