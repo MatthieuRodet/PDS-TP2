@@ -1,7 +1,12 @@
 
-FUNC INT f(a)
+FUNC VOID printTabs(tab[], save[], size)
 {
-    RETURN a*a
+    INT cmp
+    cmp := size
+    WHILE cmp DO {
+        PRINT save[size - cmp], "^2 = ", tab[size - cmp], "\n"
+        cmp := cmp - 1
+    } DONE
 }
 
 ROUTINE VOID routine(a[], b)
@@ -14,17 +19,17 @@ ROUTINE VOID routine(a[], b)
 
 FUNC VOID main()
 {
-    INT a, t[30]
-    a := 30
+    INT a, t[10], save[10]
+
+    // Initialization of the tab t
+    a := 10
     WHILE a DO {
+        t[10 - a] := 10 - a
+        save[10 - a] := 10 - a
         a := a - 1
-        t[29 - a] := 29 - a
-        PRINT "t[", 29 - a, "]\t=\t", t[29 - a], "\n"
     } DONE
-    MAP t, 2, 30, f
-    a := 30
-    WHILE a DO {
-        a := a - 1
-        PRINT "t[", 29 - a, "]\t=\t", t[29 - a], "\n"
-    } DONE
+
+    MAP t, 2, 10, routine
+
+    printTabs(t, save, 10)
 }

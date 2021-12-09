@@ -186,6 +186,22 @@ let llvm_map_header ~(id : llvm_var) ~(tab_id : llvm_var) ~(size : llvm_var) : l
   ^ string_of_var tmp2 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 1\n"
   ^ string_of_var tab_id ^ " = load i32*, i32** " ^ string_of_var tmp1 ^ "\n"
   ^ string_of_var size ^ " = load i32, i32* " ^ string_of_var tmp2 ^ "\n"
+and llvm_map_red (tid : llvm_var) (start : int) (map_size : int) (tab : llvm_var) (tab_size : int) (fun_id : llvm_var) : llvm_ir =
+  let tmp0 = newtmp() in
+  let tmp1 = newtmp() in
+  let tmp2 = newtmp() in
+  let tmp3 = newtmp() in
+  let tmp4 = newtmp() in
+  empty_ir @: string_of_var tmp0 ^ " = alloca %routine_args\n"
+  ^ string_of_var tmp1 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 0\n"
+  ^ string_of_var tmp2 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 1\n"
+  ^ string_of_var tmp3 ^ " = getelementptr [" ^ string_of_int tab_size ^ " x i32], [" ^ string_of_int tab_size ^ " x i32]* " ^ string_of_var tab ^ ", i32 0, i32 " ^ string_of_int start ^ "\n"
+  ^ "store i32* " ^ string_of_var tmp3 ^ ", i32** " ^ string_of_var tmp1 ^ "\n"
+  ^ "store i32 " ^ string_of_int map_size ^ ", i32* " ^ string_of_var tmp2 ^ "\n"
+  ^ string_of_var tmp4 ^ " = bitcast %routine_args* " ^ string_of_var tmp0 ^ " to i8*\n"
+  ^ string_of_var tid ^ " = alloca i64\n"
+  ^ "call i32 @pthread_create(i64* " ^ string_of_var tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* " ^ string_of_fun_name fun_id ^ ", i8* " ^ string_of_var tmp4 ^ ")\n"
+
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
 
@@ -199,6 +215,10 @@ let llvm_create_thread ~(tid : llvm_var) ~(fun_id : llvm_var) : llvm_ir =
 let llvm_join ~(tid : llvm_var) : llvm_instr =
   let tid_tmp = newtmp() in
   string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_tid tid ^ "\n" ^
+  "call i32 @pthread_join(i64 " ^ string_of_var tid_tmp ^ ", i8** null)\n"
+let llvm_join_map_red ~(tid : llvm_var) : llvm_instr =
+  let tid_tmp = newtmp() in
+  string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_var tid ^ "\n" ^
   "call i32 @pthread_join(i64 " ^ string_of_var tid_tmp ^ ", i8** null)\n"
 
 let llvm_define_main (ir : llvm_ir) : llvm_ir =

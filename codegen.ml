@@ -148,17 +148,9 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
   |Thread(tid, fun_id) -> ir_of_thread tid fun_id sym_tab, []
-  |MapRed(tab, cut_count, tab_size, fun_id) -> 
-    let ir = ref empty_ir in
-    for i = 0 to tab_size do
-      let i_llvm = Unit1(Unit0(IntegerExpression(i))) in
-      let ir2, _ = (ir_of_instruction (Affect(
-        Tab(tab, i_llvm),
-        Unit1(Unit0(CallFun(fun_id, [Unit1(Unit0(TabExpression(tab, i_llvm)))])))
-      )) sym_tab ) in
-      ir := !ir @@ ir2
-    done;
-    !ir, []
+  |MapRed(tab, cut_count, tab_size, fun_id) -> let tids, ir = ir_of_map_red tab cut_count tab_size fun_id sym_tab in
+                                               let ir2 = ir_of_join_map_red tids in
+                                               ir @@ ir2, []
   |Join(tid) -> match uniq_id_of_symbol_table sym_tab tid with
         | Some(Type_Int, uniq_id) -> empty_ir @: llvm_join uniq_id, []
         | _ -> failwith("TODO : ERROR JOIN")
@@ -293,6 +285,25 @@ and ir_of_call (id : ident) (args : expression list) (sym_tab : symbol_table) : 
                                                 ir @: (llvm_call id args_values), id::called
                                               else
                                                 failwith("Error : Incompatible arguments type and/or number in declaration and call of function " ^ id)  
+
+and ir_of_map_red tab cut_count tab_size fun_id sym_tab : ident list * llvm_ir =
+  let rec aux_map_red tab tab_size start map_size fun_id tids ir : ident list * llvm_ir =
+    match tab_size - start with
+    | n when n < 2 * map_size -> let tid = newtmp() in
+                             let ir2 = llvm_map_red tid start (tab_size-start) tab tab_size fun_id in
+                             tid::tids, ir@@ir2
+    | _ -> let tid = newtmp() in
+           let ir2 = llvm_map_red tid start map_size tab tab_size fun_id in
+           aux_map_red tab tab_size (start+map_size) map_size fun_id (tid::tids) (ir@@ir2)
+  in match uniq_id_of_symbol_table sym_tab tab with
+  | Some(Type_Int, _) -> failwith("Error : first argument of MAP must be INT ARRAY, but " ^ tab ^ " is of type INT")
+  | Some(_, uniqid) -> aux_map_red uniqid tab_size 0 (tab_size/cut_count) fun_id [] empty_ir
+  | None -> failwith("Error : undefined var " ^ tab)
+
+and ir_of_join_map_red tids =
+  match tids with
+  | [] -> empty_ir
+  | tid::tl -> ir_of_join_map_red tl @: llvm_join_map_red tid
 
 and aux_declaration (var : decl_variable ) (sym_tab : symbol_table) : llvm_instr * symbol_table = match var with 
   |DVar(id)-> if lookup sym_tab id != None then
