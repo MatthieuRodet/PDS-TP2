@@ -46,12 +46,12 @@ and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * symbol_table * (id
         match ret with
         | T_Void -> 
           let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
-          (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n",
+          (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n\n",
           (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::(remove_proto id sym_tab),
           called
         | T_Int ->
           let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
-          (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n",
+          (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n\n",
           (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::(remove_proto id sym_tab),
           called
           )
@@ -61,15 +61,27 @@ and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * symbol_table * (id
           match ret with
           | T_Void -> 
             let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
-            (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n",
+            (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret void\n}\n\n",
             (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::sym_tab,
             called
           | T_Int ->
             let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
-            (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n",
+            (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i32 0\n}\n\n",
             (FunctionSymbol {return_type=ret; identifier=id; arguments=args; state=Defined})::sym_tab,
             called
     )
+  |MapFun(id, [Tab_params tab; Var_params size], body) -> (match lookup sym_tab id with
+    | Some(FunctionSymbol {state=Declared; _}) -> failwith("Error : Routine function can't be protyped. Function : " ^ id)
+    | Some(FunctionSymbol _) -> failwith("Error : Redefinition of the already defined function " ^ id)
+    | Some(VariableSymbol _) -> failwith("Error : Function defined with the name of a variable : " ^ id)
+    | None -> let fun_head = llvm_map_header id tab size in
+          let arg_ir, arg_sym_tab = sym_tab_of_args [Tab_params tab; Var_params size] sym_tab in
+          let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
+          (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i8* null\n}\n\n",
+          (FunctionSymbol {return_type=T_Void; identifier=id; arguments=[Tab_params tab; Var_params size]; state=MapFunc})::sym_tab,
+          called
+    )
+  |MapFun(id, _, _) -> failwith("Error : Routine arguments must be an INT ARRAY then an INT. Function : " ^ id)
 
 and remove_proto (id : ident) (sym_tab : symbol_table) : symbol_table =
   match sym_tab with

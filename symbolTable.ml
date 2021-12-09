@@ -7,7 +7,7 @@ open Utils
 (* corresponding symbols.                          *)
 (* The order is important: this first match count  *)
 
-type function_symbol_state = Defined | Declared
+type function_symbol_state = Defined | Declared | MapFunc
 
 type uniq_ident = string
 

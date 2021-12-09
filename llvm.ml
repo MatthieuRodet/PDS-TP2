@@ -83,6 +83,7 @@ and string_of_ir ir =
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n\n"
   ^ "%union.pthread_attr_t = type { i64, [48 x i8] }\n\n"
+  ^ "%routine_args = type { i32*, i32 }\n\n"
   ^ "declare i32 @pthread_create(i64*, %union.pthread_attr_t*, i8* (i8*)*, i8*)\n\n"
   ^ "declare i32 @pthread_join(i64, i8**)\n"
   ^ "define i8* @start_routine(i8* %0) {
@@ -175,6 +176,16 @@ let llvm_call_expr ~(out : llvm_var) ~(id : llvm_var) ~(args : (llvm_type * llvm
   "%" ^ out ^ " = call i32 " ^ string_of_fun_name id ^  "(" ^ string_of_args args ^ ")\n"
 let llvm_fun_header ~(ret_type : llvm_type) ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
   "define " ^ string_of_type ret_type ^ " " ^ string_of_fun_name id ^ "(" ^ string_of_header_args args ^ ") {\n"
+let llvm_map_header ~(id : llvm_var) ~(tab_id : llvm_var) ~(size : llvm_var) : llvm_instr =
+  let tmp0 = newtmp() in
+  let tmp1 = newtmp() in
+  let tmp2 = newtmp() in
+  "define i8* " ^ string_of_fun_name id ^ "(i8* %_args) {\n"
+  ^ string_of_var tmp0 ^ " = bitcast i8* %_args to %routine_args*\n"
+  ^ string_of_var tmp1 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 0\n"
+  ^ string_of_var tmp2 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 1\n"
+  ^ string_of_var tab_id ^ " = load i32*, i32** " ^ string_of_var tmp1 ^ "\n"
+  ^ string_of_var size ^ " = load i32, i32* " ^ string_of_var tmp2 ^ "\n"
 let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
 

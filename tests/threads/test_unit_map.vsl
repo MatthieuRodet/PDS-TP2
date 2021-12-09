@@ -4,6 +4,14 @@ FUNC INT f(a)
     RETURN a*a
 }
 
+ROUTINE VOID routine(a[], b)
+{
+    WHILE b DO {
+        b := b-1
+        a[b] := a[b] * a[b]
+    } DONE
+}
+
 FUNC VOID main()
 {
     INT a, t[30]

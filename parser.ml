@@ -36,6 +36,7 @@ let rec program =  parser
 and func = parser 
   | [< 'PROTO_KW ; content = proto >] -> content
   | [< 'FUNC_KW ;  content = function_block >] -> content
+  | [< 'ROUTINE_KW ;  content = mapfun_block >] -> content
 
 and declar_function = parser 
    [< ret_type = parse_type ; name = parse_name ; 'LP ; args = list0 (parse_params) (comma)  ; 'RP >] -> ret_type, name, args
@@ -59,6 +60,12 @@ and proto = parser
 
 and function_block = parser
   | [< ret_type , name , args = declar_function ; instr = instruction >] -> Func(ret_type, name, args, instr)
+
+and mapfun_block = parser
+  | [< ret_type , name , args = declar_function ; instr = instruction >] -> 
+    match ret_type with
+    | T_Void -> MapFun(name, args, instr)
+    | T_Int -> failwith("Error : Routine function return type must be VOID")
 
 and block = parser 
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)

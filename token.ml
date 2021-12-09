@@ -33,3 +33,4 @@ type token =
   | THREAD_KW 
   | JOIN_KW
   | MAP_KW
+  | ROUTINE_KW

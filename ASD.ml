@@ -69,6 +69,7 @@ and ret_type =
 and func = 
   |Proto of ret_type*ident*(params list) 
   |Func of ret_type*ident*(params list)*instruction
+  |MapFun of ident * (params list) * instruction
 
 and program = 
   |Prog of func list
