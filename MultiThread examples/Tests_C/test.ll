@@ -5,22 +5,19 @@ target triple = "x86_64-pc-linux-gnu"
 
 %union.pthread_attr_t = type { i64, [48 x i8] }
 
-@.str = private unnamed_addr constant [6 x i8] c"Yolo\0A\00", align 1
+@.str = private unnamed_addr constant [7 x i8] c"Yolo\09\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i8* @start_routine(i8* %0) #0 {
-
-  %tmp2 = bitcast i8* %0 to i32 (i32)*
-  %2 = call i32 %tmp2(i32 2)
-  %3 = alloca i32
-  store i32 %2, i32* %3
-  %4 = bitcast i32* %3 to i8*
-  ret i8* %4
+  %2 = alloca i8*, align 8
+  store i8* %0, i8** %2, align 8
+  %3 = load i8*, i8** %2, align 8
+  ret i8* %3
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local void @start_routine_r() #0 {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i64 0, i64 0))
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i64 0, i64 0))
   ret void
 }
 
@@ -31,7 +28,7 @@ define dso_local i32 @main() #0 {
   %1 = alloca i64, align 8
   %2 = alloca i32, align 4
   store i32 30, i32* %2, align 4
-  %3 = bitcast void ()* @start_routine_r to i8*
+  %3 = bitcast i32* %2 to i8*
   %4 = call i32 @pthread_create(i64* %1, %union.pthread_attr_t* null, i8* (i8*)* @start_routine, i8* %3) #3
   %5 = load i64, i64* %1, align 8
   %6 = call i32 @pthread_join(i64 %5, i8** null)

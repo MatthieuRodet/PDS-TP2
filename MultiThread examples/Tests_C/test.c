@@ -7,7 +7,7 @@ void *start_routine(void* args) {
 
 
 void start_routine_r() {
-    printf("Yolo\n");
+    printf("Yolo\t\n");
 }
 
 int main() {

@@ -1,15 +1,40 @@
 
-FUNC VOID jackie()
+FUNC VOID jackie1()
 {
-    PRINT "oui\n"
+    INT a
+    a := 100
+    WHILE a DO {
+        PRINT "JACLIE1 : ", a, "\n"
+        a := a - 1
+    } DONE
+}
+
+FUNC VOID jackie2()
+{
+    INT a
+    a := 100
+    WHILE a DO {
+        PRINT "JACLIE2 : ", a, "\n"
+        a := a - 1
+    } DONE
+}
+
+FUNC VOID jackie3()
+{
+    INT a
+    a := 100
+    WHILE a DO {
+        PRINT "JACLIE3 : ", a, "\n"
+        a := a - 1
+    } DONE
 }
 
 FUNC VOID main()
 {
     INT a, b, c
-    THREAD a, jackie
-    THREAD b, jackie
-    THREAD c, jackie
+    THREAD a, jackie1
+    THREAD b, jackie2
+    THREAD c, jackie3
     JOIN a
     JOIN b
     JOIN c

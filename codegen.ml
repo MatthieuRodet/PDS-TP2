@@ -136,7 +136,17 @@ and ir_of_instruction  (instr : instruction) (sym_tab : symbol_table) : llvm_ir 
   |Ret(e) -> let ir, ret_val, called = ir_of_expression e sym_tab in ir @: llvm_ret ret_val, called
   |Call(id, args) -> ir_of_call id args sym_tab
   |Thread(tid, fun_id) -> ir_of_thread tid fun_id sym_tab, []
-  |MapRed(tab, cut_count, fun_id, fun_args) -> failwith("TODO : map")
+  |MapRed(tab, cut_count, tab_size, fun_id) -> 
+    let ir = ref empty_ir in
+    for i = 0 to tab_size do
+      let i_llvm = Unit1(Unit0(IntegerExpression(i))) in
+      let ir2, _ = (ir_of_instruction (Affect(
+        Tab(tab, i_llvm),
+        Unit1(Unit0(CallFun(fun_id, [Unit1(Unit0(TabExpression(tab, i_llvm)))])))
+      )) sym_tab ) in
+      ir := !ir @@ ir2
+    done;
+    !ir, []
   |Join(tid) -> match uniq_id_of_symbol_table sym_tab tid with
         | Some(Type_Int, uniq_id) -> empty_ir @: llvm_join uniq_id, []
         | _ -> failwith("TODO : ERROR JOIN")

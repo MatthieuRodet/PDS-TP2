@@ -1,19 +1,22 @@
 
-FUNC INT f(a, t[])
+FUNC INT f(a)
 {
-    INT cmpt, result 
-    cmpt := a - 1
-    result := 0
-    WHILE cmpt DO {
-        result := result + t[cmpt]
-        cmpt := cmpt - 1 }
-    DONE
-    RETURN result 
+    RETURN a*a
 }
 
 FUNC VOID main()
 {
     INT a, t[30]
     a := 30
-    MAP t, 2, f, a
+    WHILE a DO {
+        a := a - 1
+        t[29 - a] := 29 - a
+        PRINT "t[", 29 - a, "]\t=\t", t[29 - a], "\n"
+    } DONE
+    MAP t, 2, 30, f
+    a := 30
+    WHILE a DO {
+        a := a - 1
+        PRINT "t[", 29 - a, "]\t=\t", t[29 - a], "\n"
+    } DONE
 }

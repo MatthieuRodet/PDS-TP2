@@ -98,7 +98,7 @@ and instruction = parser
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
   | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name >] -> Thread(id1, id2)
   | [< 'JOIN_KW ; id1 = parse_name >] -> Join(id1)
-  | [< 'MAP_KW ; doc = variable_parser ; 'COM ; 'INTEGER frac ; 'COM ; 'IDENT f ; 'COM ; params = many expression >] -> MapRed(doc, frac, f, params)
+  | [< 'MAP_KW ; 'IDENT doc ; 'COM ; 'INTEGER frac ; 'COM ; 'INTEGER size ; 'COM ; 'IDENT f >] -> MapRed(doc, frac, size, f)
   | [< content = block>] -> Block(content)
 
 
