@@ -4,7 +4,7 @@ FUNC VOID jackie1()
     INT a
     a := 100
     WHILE a DO {
-        PRINT "JACLIE1 : ", a, "\n"
+        PRINT "JACKIE1 : ", a, "\n"
         a := a - 1
     } DONE
 }
@@ -14,7 +14,7 @@ FUNC VOID jackie2()
     INT a
     a := 100
     WHILE a DO {
-        PRINT "JACLIE2 : ", a, "\n"
+        PRINT "JACKIE2 : ", a, "\n"
         a := a - 1
     } DONE
 }
@@ -24,7 +24,7 @@ FUNC VOID jackie3()
     INT a
     a := 100
     WHILE a DO {
-        PRINT "JACLIE3 : ", a, "\n"
+        PRINT "JACKIE3 : ", a, "\n"
         a := a - 1
     } DONE
 }
