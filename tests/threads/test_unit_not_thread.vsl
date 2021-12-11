@@ -1,3 +1,4 @@
+
 FUNC VOID jackie1()
 {
     INT a, b[1000000]
@@ -30,11 +31,7 @@ FUNC VOID jackie3()
 
 FUNC VOID main()
 {
-    INT a, b, c
-    THREAD a, jackie1
-    THREAD b, jackie2
-    THREAD c, jackie3
-    JOIN a
-    JOIN b
-    JOIN c
+    jackie1()
+    jackie2()
+    jackie3()
 }

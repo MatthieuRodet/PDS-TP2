@@ -31,5 +31,5 @@ FUNC VOID main()
 
     MAP t, 1, 1000001, routine
 
-    printTabs(t, save, 1000001)
+//    printTabs(t, save, 1000001)
 }

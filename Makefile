@@ -63,3 +63,11 @@ tests : tests_unit tests_threads tests_level1 tests_level2 tests_level3 tests_le
 test_prettyprint : tests_unit_prettyprint tests_threads_prettyprint tests_level1_prettyprint tests_level2_prettyprint tests_level3_prettyprint tests_level4_prettyprint
 
 test : tests
+
+
+experiment : SHELL := /bin/bash # Execute the recipe in bash instead of shell
+experiment : # Takes around  seconds to execute
+	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_map_hard ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_map.txt
+	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_not_map_hard ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_not_map.txt
+	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_thread ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_thread.txt
+	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_not_thread ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_not_thread.txt
