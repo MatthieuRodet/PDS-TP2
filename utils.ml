@@ -7,29 +7,30 @@ let func = ref 0
 (* generate a new unique local identifier (starting with %) *)
 let newtmp: unit -> string = function () ->
   tmp := succ !tmp;
-  "tmp" ^ (string_of_int !tmp)
+  "tmp_" ^ (string_of_int !tmp)
 
 (* generate a new unique label starting with str *)
 let newlab str =
   lab := succ !lab;
-  str ^ (string_of_int !lab)
+  str ^ "_" ^ (string_of_int !lab)
 
 (* generate a new unique global identifier (starting with @str) *)
 let newglob str =
   glob := succ !glob;
-  "@" ^ str ^ (string_of_int !glob)
+  "@" ^ str ^ "_" ^ (string_of_int !glob)
 
 (* generate a new unique identifier. Used to differenciate multiple declaration of variable with same name. *)
 let newuniqid str =
   incr uniq_ident;
-  str ^ string_of_int !uniq_ident
+  str ^ "_" ^ string_of_int !uniq_ident
 
 let newfun str =
   match str with
   | "main" -> "@" ^ str
-  | _ -> incr func; "@" ^ str ^ string_of_int !func
+  | _ -> incr func; "@" ^ str ^ "_" ^ string_of_int !func
 
 (* transform escaped newlines ('\' 'n') into newline form suitable for LLVM
+ * and transform tabulations ('\' 't') into tabulations form suitable for LLVM
  * and append the NUL character (end of string)
  * return a pair: the new string, and its size (according to LLVM)
  *)
@@ -39,7 +40,7 @@ let string_transform str =
    * return a pair: the new string and the number of matches
    *)
   in let re_t = Str.regexp_string "\\t"
-  (* replace all \n by \0A and append an \00 at the end.
+  (* replace all \n by \09.
    * return a pair: the new string and the number of matches
    *)
   in let rec aux_n str pos matches =

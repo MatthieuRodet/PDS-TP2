@@ -7,13 +7,7 @@ open SymbolTable
 
 (* main function. returns only a string: the generated code *)
 let rec ir_of_ast (prog : program) : llvm_ir = 
-  (*let ir, v = ir_of_prog prog in*)
   let ir, sym_tab, called_func = ir_of_prog prog [] [] in 
-  (*let v = LLVM_i32(0) in*) 
-  (* adds the return instruction *)
-  (*let ir = ir @: llvm_return ~ret_type:LLVM_type_i32 ~ret_value:v in*)
-  (* We create the function main *)
-  (*let ir = llvm_define_main ir in*)
   let _ = verify_proto_declaration sym_tab called_func in
   ir
 
@@ -74,7 +68,7 @@ and ir_of_fun (f : func) (sym_tab : symbol_table) : llvm_ir * symbol_table * (id
     | Some(FunctionSymbol {state=Declared; _}) -> failwith("Error : Routine function can't be protyped. Function : " ^ id)
     | Some(FunctionSymbol _) -> failwith("Error : Redefinition of the already defined function " ^ id)
     | Some(VariableSymbol _) -> failwith("Error : Function defined with the name of a variable : " ^ id)
-    | None -> let fun_head = llvm_map_header id tab size in
+    | None -> let fun_head = llvm_routine_header id tab size in
           let arg_ir, arg_sym_tab = sym_tab_of_args [Tab_params tab; Var_params size] sym_tab in
           let body_ir, called = ir_of_instruction body (arg_sym_tab @ sym_tab) in
           (empty_ir @: fun_head) @@ arg_ir @@ body_ir @: "ret i8* null\n}\n\n",
@@ -108,11 +102,6 @@ and verify_fun_compatibility (ret : ret_type) (ret2 : ret_type) (args : params l
     | _ -> false
   in ret == ret2 && check_args args args2
 
-(*
-and ir_of_main (body : instruction) (sym_tab : symbol_table) : llvm_ir =
-  let ir = ir_of_instruction body sym_tab in
-  llvm_define_main ir
-*)
 and ret_type_conv ret_type = match ret_type with
   | T_Int -> LLVM_type_i32
   | T_Void -> LLVM_type_void
@@ -303,7 +292,7 @@ and ir_of_map_red tab cut_count tab_size fun_id sym_tab : ident list * llvm_ir =
 and ir_of_join_map_red tids =
   match tids with
   | [] -> empty_ir
-  | tid::tl -> ir_of_join_map_red tl @: llvm_join_map_red tid
+  | tid::tl -> ir_of_join_map_red tl @: llvm_join tid
 
 and aux_declaration (var : decl_variable ) (sym_tab : symbol_table) : llvm_instr * symbol_table = match var with 
   |DVar(id)-> if lookup sym_tab id != None then
