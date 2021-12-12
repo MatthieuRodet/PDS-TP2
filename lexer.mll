@@ -49,6 +49,8 @@ rule tokenize = parse
       { DIV       :: tokenize lexbuf }
   | "INT"
       { INT_KW    :: tokenize lexbuf }
+  | "TID"
+      { TID_KW    :: tokenize lexbuf }
   | '{' 
       { LB        :: tokenize lexbuf }
   | '}' 
@@ -93,8 +95,6 @@ rule tokenize = parse
     { JOIN_KW    :: tokenize lexbuf}
   | "MAP"
     { MAP_KW     :: tokenize lexbuf }
-  | "ROUTINE"
-    { ROUTINE_KW     :: tokenize lexbuf }
 
 
   (* TODO : other keywords *)

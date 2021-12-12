@@ -9,8 +9,9 @@ FUNC VOID printTabs(tab[], save[], size)
     } DONE
 }
 
-ROUTINE VOID routine(a[], b)
+FUNC VOID routinee(a[], b, c)
 {
+    PRINT c, "\n"
     WHILE b DO {
         b := b-1
         a[b] := a[b] * 2 + 1
@@ -28,8 +29,8 @@ FUNC VOID main()
         save[1000001 - a] := 1000001 - a
         a := a - 1
     } DONE
-
-    MAP t, 10, 1000001, routine
+    a := 100
+    MAP t, 10, 1000001, routinee, 100
 
 //    printTabs(t, save, 1000001)
 }

@@ -7,6 +7,7 @@ open Utils
 
 type llvm_type =
   | LLVM_type_i32
+  | LLVM_type_i64
   | LLVM_type_i32_ptr
   | LLVM_type_void
 (* TODO: to complete *)
@@ -62,11 +63,11 @@ let (@@) ir1 ir2 = {
 (* actual IR generation *)
 let string_of_type = function
   | LLVM_type_i32 -> "i32"
+  | LLVM_type_i64 -> "i64"
   | LLVM_type_i32_ptr -> "i32*"
   | LLVM_type_void -> "void"
 
 let string_of_var x = "%" ^ x
-let string_of_tid x = "%" ^ x ^ "_tid"
 let string_of_fun_name x = "@" ^ x
 
 let string_of_struct_id x = "%" ^ x ^ "_args"
@@ -85,17 +86,8 @@ let rec string_of_ir ir =
   ^ "declare i32 @printf(i8* noalias nocapture, ...)\n"
   ^ "declare i32 @scanf(i8* noalias nocapture, ...)\n\n"
   ^ "%union.pthread_attr_t = type { i64, [48 x i8] }\n\n"
-  ^ "%routine_args = type { i32*, i32 }\n\n"
   ^ "declare i32 @pthread_create(i64*, %union.pthread_attr_t*, i8* (i8*)*, i8*)\n\n"
   ^ "declare i32 @pthread_join(i64, i8**)\n"
-  ^ "define i8* @start_routine(i8* %0) {
-    %tmp2 = bitcast i8* %0 to i32 (i32)*
-    %2 = call i32 %tmp2(i32 2)
-    %3 = alloca i32
-    store i32 %2, i32* %3
-    %4 = bitcast i32* %3 to i8*
-    ret i8* %4
-  }\n"
   ^ "\n; Actual code begins\n\n"
   ^ !glob_read ^ " = global [3 x i8] c\"%d\\00\"\n"
   ^ string_of_instr_seq ir.header
@@ -175,8 +167,10 @@ let llvm_tab_expr ~(dest : llvm_var) ~(tab : llvm_var) ~(index : llvm_value) ~(s
 let llvm_ptr_expr ~(dest : llvm_var) ~(tab : llvm_var) ~(index : llvm_value) : llvm_instr =
   string_of_var dest ^ " = getelementptr i32, i32* " ^ string_of_var tab ^ ", i32 " ^ string_of_value index ^ "\n"
 
-let llvm_call_expr ~(out : llvm_var) ~(id : llvm_var) ~(args : (llvm_type * llvm_value) list) : llvm_instr =
-  "%" ^ out ^ " = call i32 " ^ string_of_fun_name id ^  "(" ^ string_of_args args ^ ")\n"
+let llvm_call_expr ~(out : llvm_var) ~(id : llvm_var) ~(args : llvm_var) : llvm_instr =
+  let tmp0 = newtmp() in
+  string_of_var tmp0 ^ " = call i8* " ^ string_of_fun_name id ^  "(i8* " ^ string_of_var args ^ ")\n"
+  ^ string_of_var out ^ " = ptrtoint i8* " ^ string_of_var tmp0 ^ " to i32\n"
 
 (* INSTRUCTIONS *)
 
@@ -199,51 +193,94 @@ let llvm_label ~(label : llvm_label) : llvm_instr =
   label ^ ":\n"
   
   (* CALL *)
-let llvm_call ~(id : llvm_var) ~(args : (llvm_type * llvm_value) list) : llvm_instr =
-  "call void " ^ string_of_fun_name id ^  "(" ^ string_of_args args ^ ")\n"
+let llvm_args_init ~(out : llvm_var) ~(fun_id : llvm_var) : llvm_instr =
+  string_of_var out ^ " = alloca " ^ string_of_struct_id fun_id ^ "\n"
+
+let llvm_call ~(id : llvm_var) ~(arg_struct : llvm_var) : llvm_instr =
+  let tmp0 = newtmp() in
+  string_of_var tmp0 ^ " = call i8* " ^ string_of_fun_name id ^  "(i8* " ^ string_of_var arg_struct ^ ")\n"
+
+let llvm_arg_ptr_in_struct ~(arg_ptr : llvm_var) ~(fun_id : llvm_var) ~(struct_ptr : llvm_var) ~(index : int) : llvm_instr =
+  string_of_var arg_ptr ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var struct_ptr ^ ", i32 0, i32 " ^ string_of_int index ^ "\n"
+
+let llvm_store_arg_in_struct ~(out : llvm_value) ~(arg_ptr : llvm_var) ~(typ : llvm_type) : llvm_instr =
+  "store " ^ string_of_type typ ^ " " ^ string_of_value out ^ ", " ^ string_of_type typ ^ "* " ^ string_of_var arg_ptr ^ "\n"
+
+let llvm_convert_args_ptr ~(out : llvm_var) ~(fun_id : llvm_var) ~(args : llvm_var) =
+  string_of_var out ^ " = bitcast " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var args ^ " to i8*\n"
 
   (* RETURN *)
 let llvm_ret ~(ret_val : llvm_value) : llvm_instr =
-  "ret i32 " ^ string_of_value ret_val ^ "\n"
+  let tmp0 = newtmp() in
+  string_of_var tmp0 ^ " = inttoptr i32 " ^ string_of_value ret_val ^ " to i8*\n" ^
+  "ret i8* " ^ string_of_var tmp0 ^ "\n"
 
   (* THREAD *)
-let llvm_create_thread ~(tid : llvm_var) ~(fun_id : llvm_var) : llvm_ir =
-  let fun_ptr = newtmp() in
-  ((empty_ir
-  @: string_of_tid tid ^ " = alloca i64\n")
-  @: string_of_var fun_ptr ^ " = bitcast void ()* " ^ string_of_fun_name fun_id ^ " to i8*\n")
-  @: "call i32 @pthread_create(i64* " ^ string_of_tid tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* @start_routine, i8* " ^ string_of_var fun_ptr ^ ")\n"
+let llvm_create_thread ~(tid : llvm_var) ~(fun_id : llvm_var) ~(args : llvm_var) : llvm_instr =
+  "call i32 @pthread_create(i64* " ^ string_of_var tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* " ^ string_of_fun_name fun_id ^ ", i8* " ^ string_of_var args ^ ")\n"
 
   (* JOIN *)
-let llvm_join ~(tid : llvm_var) : llvm_instr =
+let llvm_join_void ~(tid : llvm_var) : llvm_instr =
   let tid_tmp = newtmp() in
-  string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_tid tid ^ "\n" ^
+  string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_var tid ^ "\n" ^
   "call i32 @pthread_join(i64 " ^ string_of_var tid_tmp ^ ", i8** null)\n"
 
+let llvm_join_int ~(tid : llvm_var) ~(out : llvm_var) : llvm_instr =
+  let tid_tmp = newtmp() in
+  let tmp0 = newtmp() in
+  let tmp1 = newtmp() in
+  let tmp2 = newtmp() in
+  string_of_var tid_tmp ^ " = load i64, i64* " ^ string_of_var tid ^ "\n" ^
+  string_of_var tmp0 ^ " = alloca i8*\n" ^
+  "call i32 @pthread_join(i64 " ^ string_of_var tid_tmp ^ ", i8** " ^ string_of_var tmp0 ^ ")\n" ^
+  string_of_var tmp1 ^ " = load i8*, i8** " ^ string_of_var tmp0 ^ "\n" ^
+  string_of_var tmp2 ^ " = ptrtoint i8* " ^ string_of_var tmp1 ^ " to i32\n" ^
+  "store i32 " ^ string_of_var tmp2 ^ ", i32* " ^ string_of_var out ^ "\n"
+
   (* MAP *)
-let llvm_map_red (tid : llvm_var) (start : int) (map_size : int) (tab : llvm_var) (tab_size : int) (fun_id : llvm_var) : llvm_ir =
+let rec llvm_map_red (tid : llvm_var) (start : int) (map_size : int) (tab : llvm_var) (tab_size : int) (fun_id : llvm_var) (args : (llvm_type * llvm_value) list) : llvm_ir =
   let tmp0 = newtmp() in
   let tmp1 = newtmp() in
   let tmp2 = newtmp() in
   let tmp3 = newtmp() in
   let tmp4 = newtmp() in
-  empty_ir @: string_of_var tmp0 ^ " = alloca %routine_args\n"
-  ^ string_of_var tmp1 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 0\n"
-  ^ string_of_var tmp2 ^ " = getelementptr %routine_args, %routine_args* " ^ string_of_var tmp0 ^ ", i32 0, i32 1\n"
+  empty_ir @: string_of_var tmp0 ^ " = alloca " ^ string_of_struct_id fun_id ^ "\n"
+  ^ string_of_var tmp1 ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var tmp0 ^ ", i32 0, i32 0\n"
+  ^ string_of_var tmp2 ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var tmp0 ^ ", i32 0, i32 1\n"
   ^ string_of_var tmp3 ^ " = getelementptr [" ^ string_of_int tab_size ^ " x i32], [" ^ string_of_int tab_size ^ " x i32]* " ^ string_of_var tab ^ ", i32 0, i32 " ^ string_of_int start ^ "\n"
   ^ "store i32* " ^ string_of_var tmp3 ^ ", i32** " ^ string_of_var tmp1 ^ "\n"
   ^ "store i32 " ^ string_of_int map_size ^ ", i32* " ^ string_of_var tmp2 ^ "\n"
-  ^ string_of_var tmp4 ^ " = bitcast %routine_args* " ^ string_of_var tmp0 ^ " to i8*\n"
-  ^ string_of_tid tid ^ " = alloca i64\n"
-  ^ "call i32 @pthread_create(i64* " ^ string_of_tid tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* " ^ string_of_fun_name fun_id ^ ", i8* " ^ string_of_var tmp4 ^ ")\n"
+  ^ llvm_store_args_map tmp0 fun_id 2 args
+  ^ string_of_var tmp4 ^ " = bitcast " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var tmp0 ^ " to i8*\n"
+  ^ string_of_var tid ^ " = alloca i64\n"
+  ^ "call i32 @pthread_create(i64* " ^ string_of_var tid ^ ", %union.pthread_attr_t* null, i8* (i8*)* " ^ string_of_fun_name fun_id ^ ", i8* " ^ string_of_var tmp4 ^ ")\n"
+
+and llvm_store_args_map (struct_id : llvm_var) (fun_id : llvm_var) (index : int) (args : (llvm_type * llvm_value) list) : llvm_instr =
+  match args with
+  | [] -> ""
+  | (typ, id)::tl -> let tmp0 = newtmp() in
+              string_of_var tmp0 ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var struct_id ^ ", i32 0, i32 " ^ string_of_int index ^ "\n"
+              ^ "store " ^ string_of_type typ ^ " " ^ string_of_value id ^ ", " ^ string_of_type typ ^ "* " ^ string_of_var tmp0 ^ "\n"
+              ^ llvm_store_args_map struct_id fun_id (index+1) tl
 
 (* FUNCTIONS *)
 
 let llvm_struct_of_args ~(fun_id : llvm_var) ~(args : llvm_type list) : llvm_instr =
   string_of_struct_id fun_id ^ " = type {" ^ string_of_args_bis args ^ "}\n"
 
-let llvm_fun_header ~(ret_type : llvm_type) ~(id : llvm_var) ~(args : (llvm_type * llvm_var) list) : llvm_instr =
-  "define " ^ string_of_type ret_type ^ " " ^ string_of_fun_name id ^ "(" ^ string_of_header_args args ^ ") {\n"
+let llvm_fun_header ~(id : llvm_var) : llvm_instr =
+  "define i8* " ^ string_of_fun_name id ^ "(i8* %_args) {\n"
+
+let llvm_args_struct ~(out : llvm_var) ~(struct_id : llvm_var) : llvm_instr =
+  string_of_var out ^ " = bitcast i8* %_args to " ^ string_of_struct_id struct_id ^ "*\n"
+
+let llvm_extract_var_arg (id : llvm_var) (fun_id : llvm_var) (struct_id : llvm_var) (index : int) : llvm_instr =
+  string_of_var id ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var struct_id ^ ", i32 0, i32 " ^ string_of_int index ^ "\n"
+
+let llvm_extract_tab_arg (id : llvm_var) (fun_id : llvm_var) (struct_id : llvm_var) (index : int) : llvm_instr =
+  let tmp0 = newtmp() in
+  string_of_var tmp0 ^ " = getelementptr " ^ string_of_struct_id fun_id ^ ", " ^ string_of_struct_id fun_id ^ "* " ^ string_of_var struct_id ^ ", i32 0, i32 " ^ string_of_int index ^ "\n"
+  ^ string_of_var id ^ " = load i32*, i32** " ^ string_of_var tmp0 ^ "\n"
 
 let llvm_routine_header ~(id : llvm_var) ~(tab_id : llvm_var) ~(size : llvm_var) : llvm_instr =
   let tmp0 = newtmp() in

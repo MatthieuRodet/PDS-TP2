@@ -9,7 +9,7 @@ FUNC VOID printTabs(tab[], save[], size)
     } DONE
 }
 
-ROUTINE VOID routine(a[], b)
+FUNC VOID routine(a[], b)
 {
     WHILE b DO {
         b := b-1

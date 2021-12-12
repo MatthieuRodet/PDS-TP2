@@ -1,33 +1,29 @@
-let tmp = ref 0
-let lab = ref 0
-let glob = ref 0
-let uniq_ident = ref 0
-let func = ref 0
+let uniq_int = ref 0
 
 (* generate a new unique local identifier (starting with %) *)
 let newtmp: unit -> string = function () ->
-  tmp := succ !tmp;
-  "tmp_" ^ (string_of_int !tmp)
+  uniq_int := succ !uniq_int;
+  "tmp_" ^ (string_of_int !uniq_int)
 
 (* generate a new unique label starting with str *)
 let newlab str =
-  lab := succ !lab;
-  str ^ "_" ^ (string_of_int !lab)
+  uniq_int := succ !uniq_int;
+  str ^ "_" ^ (string_of_int !uniq_int)
 
 (* generate a new unique global identifier (starting with @str) *)
 let newglob str =
-  glob := succ !glob;
-  "@" ^ str ^ "_" ^ (string_of_int !glob)
+  uniq_int := succ !uniq_int;
+  "@" ^ str ^ "_" ^ (string_of_int !uniq_int)
 
 (* generate a new unique identifier. Used to differenciate multiple declaration of variable with same name. *)
 let newuniqid str =
-  incr uniq_ident;
-  str ^ "_" ^ string_of_int !uniq_ident
+  incr uniq_int;
+  str ^ "_" ^ string_of_int !uniq_int
 
 let newfun str =
   match str with
   | "main" -> "@" ^ str
-  | _ -> incr func; "@" ^ str ^ "_" ^ string_of_int !func
+  | _ -> incr uniq_int; "@" ^ str ^ "_" ^ string_of_int !uniq_int
 
 (* transform escaped newlines ('\' 'n') into newline form suitable for LLVM
  * and transform tabulations ('\' 't') into tabulations form suitable for LLVM

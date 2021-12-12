@@ -36,7 +36,6 @@ let rec program =  parser
 and func = parser 
   | [< 'PROTO_KW ; content = proto >] -> content
   | [< 'FUNC_KW ;  content = function_block >] -> content
-  | [< 'ROUTINE_KW ;  content = mapfun_block >] -> content
 
 and declar_function = parser 
    [< ret_type = parse_type ; name = parse_name ; 'LP ; args = list0 (parse_params) (comma)  ; 'RP >] -> ret_type, name, args
@@ -61,17 +60,12 @@ and proto = parser
 and function_block = parser
   | [< ret_type , name , args = declar_function ; instr = instruction >] -> Func(ret_type, name, args, instr)
 
-and mapfun_block = parser
-  | [< ret_type , name , args = declar_function ; instr = instruction >] -> 
-    match ret_type with
-    | T_Void -> MapFun(name, args, instr)
-    | T_Int -> failwith("Error : Routine function return type must be VOID")
-
 and block = parser 
   | [< 'LB ; declaration = many declar ; instr = many instruction;'RB >] -> Unit(declaration, instr)
 
 and declar = parser  
   |[< 'INT_KW ; content = (list1 declar_var comma) >] -> Declaration(content)
+  |[< 'TID_KW ; content = (list1 declar_var comma) >] -> DeclarationTid(content)
 
 and declar_var = parser 
   |[< 'IDENT id ; vrbls = (declar_var_aux id) >] -> vrbls
@@ -103,11 +97,22 @@ and instruction = parser
   | [< 'IF_KW ; expr = expression ; 'THEN_KW ; instr = instruction ; _ = (opt else_parser) ;  instr2 = (opt instruction)  ; 'FI_KW >] -> If(expr, instr, instr2)
   | [< 'WHILE_KW ; expr = expression ; 'DO_KW ;  instr = instruction ; 'OD_KW >] -> While(expr, instr) 
   | [< 'RETURN_KW ; expr = expression >] -> Ret(expr)
-  | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name >] -> Thread(id1, id2)
-  | [< 'JOIN_KW ; id1 = parse_name >] -> Join(id1)
-  | [< 'MAP_KW ; 'IDENT doc ; 'COM ; 'INTEGER frac ; 'COM ; 'INTEGER size ; 'COM ; 'IDENT f >] -> MapRed(doc, frac, size, f)
+  | [< 'THREAD_KW ; id1 = parse_name ; 'COM ; id2 = parse_name ; args = parse_args_thread >] -> Thread(id1, id2, args)
+  | [< 'JOIN_KW ; id1 = parse_name ; res = parse_join_res >] -> Join(id1, res)
+  | [< 'MAP_KW ; 'IDENT doc ; 'COM ; 'INTEGER frac ; 'COM ; 'INTEGER size ; 'COM ; 'IDENT f ; args = parse_args_map >] -> MapRed(doc, frac, size, f, args)
   | [< content = block>] -> Block(content)
 
+and parse_args_map = parser
+|[< 'COM ; args = list1 expression comma >] -> args
+|[< >] -> [] 
+
+and parse_args_thread = parser
+  |[< 'COM ; args = list1 expression comma >] -> args
+  |[< >] -> [] 
+
+and parse_join_res = parser
+  |[< 'COM ; 'IDENT id >] -> Some(id)
+  |[< >] -> None
 
 and expression = parser
   | [< e1 = parsePrio1 ; aux = expression_aux e1 >] -> aux

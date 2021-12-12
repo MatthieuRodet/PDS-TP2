@@ -18,23 +18,26 @@ FUNC VOID jackie2()
     } DONE
 }
 
-FUNC VOID jackie3()
+FUNC INT jackie3(a, b[])
 {
-    INT a, b[1000000]
-    a := 1000000
     WHILE a DO {
         a := a - 1
-        b[a] := a
+        b[a] := 2 * a
     } DONE
+    PRINT b[950000], "\n"
+    RETURN b[950000]
 }
 
 FUNC VOID main()
 {
-    INT a, b, c
+    TID a, b, c
+    INT t[1000000], z
     THREAD a, jackie1
     THREAD b, jackie2
-    THREAD c, jackie3
+    THREAD c, jackie3, 1000000, t
     JOIN a
     JOIN b
-    JOIN c
+    JOIN c, z
+    PRINT z, "\n"
+    PRINT t[950000], "\n"
 }

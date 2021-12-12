@@ -34,6 +34,7 @@ and expPrio0 =
 
 and typ =
   | Type_Int
+  | Type_Tid
   | Type_Tab of int
   | Type_Tab_Ptr
 
@@ -43,20 +44,21 @@ and item =
 
 and declar =
   | Declaration of decl_variable list
+  | DeclarationTid of decl_variable list
 
 
 and instruction = 
   | Affect of variable * expression 
   | Print of item list 
   | Read of variable list
-  | Thread of ident * ident
-  | Join of ident
+  | Thread of ident * ident * expression list
+  | Join of ident * ident option
   | If of expression * instruction * instruction option
   | While of expression * instruction 
   | Block of block
   | Ret of expression 
-  | Call of ident* (expression list) 
-  | MapRed of ident * int * int * ident
+  | Call of ident* expression list
+  | MapRed of ident * int * int * ident * expression list
 
 and block =
   | Unit of declar list * instruction list
@@ -69,7 +71,6 @@ and ret_type =
 and func = 
   |Proto of ret_type*ident*(params list) 
   |Func of ret_type*ident*(params list)*instruction
-  |MapFun of ident * (params list) * instruction
 
 and program = 
   |Prog of func list

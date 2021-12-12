@@ -17,6 +17,7 @@ type token =
   | FUNC_KW
   | PROTO_KW
   | INT_KW
+  | TID_KW
   | VOID_KW
   | RETURN_KW
   | PRINT_KW
@@ -33,4 +34,3 @@ type token =
   | THREAD_KW 
   | JOIN_KW
   | MAP_KW
-  | ROUTINE_KW
