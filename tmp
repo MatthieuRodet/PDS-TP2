@@ -1,0 +1,7 @@
+      | Some (FunctionSymbol _) ->
+          failwith
+            "Error : first and second arguments of a function used in a MAP \
+             must be an INT array and an INT"
+      | Some (VariableSymbol _) ->
+          failwith ("Error : function symbol " ^ fun_id ^ " used as var")
+      | None -> failwith ("Error : unknown function symbol " ^ fun_id))
