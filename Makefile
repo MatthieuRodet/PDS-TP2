@@ -66,7 +66,8 @@ test : tests
 
 
 experiment : SHELL := /bin/bash # Execute the recipe in bash instead of shell
-experiment : # Takes around  seconds to execute
+experiment : # May take some time to execute. (around 500 seconds)
+	if [[ ! -d "stats" ]]; then mkdir stats; fi
 	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_map_hard ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_map.txt
 	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_not_map_hard ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_not_map.txt
 	for _ in {1..10}; do start_time=$$(date +%s.%3N) ; for _ in {1..1000}; do ./tests/threads/test_unit_thread ; done ; end_time=$$(date +%s.%3N) ; elapsed=$$(echo "scale=3; $$end_time - $$start_time" | bc) ; echo "$$elapsed"; done > stats/stats_thread.txt

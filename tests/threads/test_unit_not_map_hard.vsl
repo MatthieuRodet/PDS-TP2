@@ -1,35 +1,13 @@
-
-FUNC VOID printTabs(tab[], save[], size)
-{
-    INT cmp
-    cmp := size
-    WHILE cmp DO {
-        PRINT save[size - cmp], "*2 + 1 = ", tab[size - cmp], "\n"
-        cmp := cmp - 1
-    } DONE
-}
-
 FUNC VOID routine(a[], b)
 {
     WHILE b DO {
         b := b-1
-        a[b] := a[b] * 2 + 1
+        a[b] := b * 2 + 1
     } DONE
 }
 
 FUNC VOID main()
 {
-    INT a, t[1000001], save[1000001]
-
-    // Initialization of the tab t
-    a := 1000001
-    WHILE a DO {
-        t[1000001 - a] := 1000001 - a
-        save[1000001 - a] := 1000001 - a
-        a := a - 1
-    } DONE
-
+    INT t[1000001]
     MAP t, 1, 1000001, routine
-
-//    printTabs(t, save, 1000001)
 }
