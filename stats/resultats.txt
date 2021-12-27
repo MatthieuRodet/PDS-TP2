@@ -1,0 +1,4 @@
+Moyenne pour le fichier "stats_map" : 6.47
+Moyenne pour le fichier "stats_not_map" : 10.74
+Moyenne pour le fichier "stats_thread" : 9.73
+Moyenne pour le fichier "stats_not_thread" : 11.9
