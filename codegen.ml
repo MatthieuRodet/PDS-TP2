@@ -540,7 +540,8 @@ and aux_declaration_tid (var : decl_variable) (sym_tab : symbol_table) :
 and ir_of_expression (e : expression) (sym_tab : symbol_table) :
         llvm_ir * llvm_value * ident list =
     match e with
-    | AddExpression [] -> (empty_ir, LLVM_i32 0, [])
+    | AddExpression [] -> failwith "Unknown error : empty add expression"
+    | AddExpression [e] -> ir_of_exp_prio_1 e sym_tab
     | AddExpression (e1 :: e2) ->
         let ir1, v1, called = ir_of_exp_prio_1 e1 sym_tab in
         let ir2, v2, called2 = ir_of_expression (AddExpression e2) sym_tab in
@@ -550,7 +551,8 @@ and ir_of_expression (e : expression) (sym_tab : symbol_table) :
             @: llvm_add ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2
         in
         (ir, LLVM_var x, called2 @ called)
-    | MinusExpression [] -> (empty_ir, LLVM_i32 0, [])
+    | MinusExpression [] -> failwith "Unknown error : empty minus expression"
+    | MinusExpression [e] -> ir_of_exp_prio_1 e sym_tab
     | MinusExpression (e1 :: e2) ->
         let ir1, v1, called = ir_of_exp_prio_1 e1 sym_tab in
         let ir2, v2, called2 = ir_of_expression (MinusExpression e2) sym_tab in
@@ -565,7 +567,8 @@ and ir_of_expression (e : expression) (sym_tab : symbol_table) :
 and ir_of_exp_prio_1 (e : expPrio1) (sym_tab : symbol_table) :
         llvm_ir * llvm_value * ident list =
     match e with
-    | MulExpression [] -> (empty_ir, LLVM_i32 1, [])
+    | MulExpression [] -> failwith "Unknown error : empty mult expression"
+    | MulExpression [e] -> ir_of_exp_prio_0 e sym_tab
     | MulExpression (e1 :: e2) ->
         let ir1, v1, called = ir_of_exp_prio_0 e1 sym_tab in
         let ir2, v2, called2 = ir_of_exp_prio_1 (MulExpression e2) sym_tab in
@@ -575,7 +578,8 @@ and ir_of_exp_prio_1 (e : expPrio1) (sym_tab : symbol_table) :
             @: llvm_mul ~res_var:x ~res_type:LLVM_type_i32 ~left:v1 ~right:v2
         in
         (ir, LLVM_var x, called @ called2)
-    | DivExpression [] -> (empty_ir, LLVM_i32 1, [])
+    | DivExpression [] -> failwith "Unknown error : empty div expression"
+    | DivExpression [e] -> ir_of_exp_prio_0 e sym_tab
     | DivExpression (e1 :: e2) ->
         let ir1, v1, called = ir_of_exp_prio_0 e1 sym_tab in
         let ir2, v2, called2 = ir_of_exp_prio_1 (DivExpression e2) sym_tab in
