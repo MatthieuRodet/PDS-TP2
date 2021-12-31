@@ -23,9 +23,6 @@ Notre compilateur traite actuellement :
 * Les définitions et appels de fonction (sans le passage de tableaux en paramètre)
 * La gestions des tableaux (expression, affectation et lecture)
 * Un Pretty-Printer
-
-Il nous reste à étendre et améliorer notre compilateur sur les points suivants :
-
 * Le passage de tableaux en paramètre
 
 Nous allons également nous pencher sur les extensions suivantes :
